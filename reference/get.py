@@ -26,9 +26,6 @@ with open("phenotypes.tsv", "w") as o:
         # remove medications
         if "MED" in gbe_id:
             continue
-        # remove family history and rohit's phenotypes
-        if "RH" in gbe_id or "FH" in gbe_id:
-            continue
         # remove acceleration phenotypes
         if "acceleration" in name:
             continue 
@@ -41,8 +38,15 @@ with open("phenotypes.tsv", "w") as o:
         # remove phenotypes which are angles
         if "angle" in name:
             continue
-        # remove acquisition phase for MRI images
-        if gbe_id == "INI25780":
+        # remove phenotypes which mark data acquisition methods
+        if "method" in name:
             continue
+        # remove environmental phenotypes (pollution/traffic/etc.)
+        if gbe_id in ["INI"+str(24000+i) for i in range(3,25)]:
+            continue
+        # remove acquisition phase, safety, and completion info for brain MRIs
+        if gbe_id in ["INI25780","BIN12139","BIN12188"]:
+            continue
+        # finally
         o.write("\t".join([gbe_id,n,name,path+'\n']))
 
