@@ -11,7 +11,11 @@ with open("../../ukbb-tools/05_gbe/phenotype_info.tsv", "r") as i:
             ids.add(gbe_id)
             info[gbe_id] = (name,n_gbe,path)
 
-# hard code biomarker fields and ids
+# load up phenos to exclude (duplicates) - these are the GBE IDs
+with open("blacklist.txt", "r") as f:
+    blacklist = set([line.split()[0] for line in f])
+
+# hard code biomarker fields and ids - there are many versions of these phenos
 biomarker_ids = ["INI20030620", "INI20030600", "INI10030610", "INI20030630",
                  "INI20030640", "INI20030650", "INI20030680", "INI20030690",
                  "INI20030710", "INI20030700", "INI20030720", "INI20030660",
@@ -39,6 +43,9 @@ with open("phenotypes.tsv", "w") as o:
     for gbe_id,(name,n,path) in sorted(info.items(), key=lambda x:x[0]):
         # filter on number of observations/cases
         if int(n) < 100:
+            continue
+        # remove blacklisted traits
+        if gbe_id in blacklist:
             continue
         # remove pilot phenotypes
         if "(pilot)" in name:
