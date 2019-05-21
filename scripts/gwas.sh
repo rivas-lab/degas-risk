@@ -11,10 +11,18 @@ if [ $# != 1 ]; then
     if [ -z $SLURM_ARRAY_TASK_ID ]; then
         echo "usage: $0 GBE_ID"; exit 1
     else 
-        phe=$(awk -v nr=$SLURM_ARRAY_TASK_ID '(NR==nr){print $1}' ../reference/phenotypes.tsv )
+        phe=$(awk -v nr=$SLURM_ARRAY_TASK_ID '(NR==nr+1999){print $1}' ../reference/phenotypes.tsv )
     fi
 else
     phe=$1
+fi
+
+# load an appropriate plink version
+if grep -q "CPU_GEN:HSW\|CPU_GEN:BDW\|CPU_GEN:SKX" <(a=$(hostname); sinfo -N -n ${a::-4} --format "%50f"); then
+   # AVX2 is suitable for use on this node if CPU is recent enough
+   ml load plink2/20190402
+else
+   ml load plink2/20190402-non-AVX2
 fi
 
 # loop over variants on one/both arrays
