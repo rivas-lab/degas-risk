@@ -11,7 +11,7 @@ if [ $# != 1 ]; then
     if [ -z $SLURM_ARRAY_TASK_ID ]; then
         echo "usage: $0 GBE_ID"; exit 1
     else 
-        phe=$(awk -v nr=$SLURM_ARRAY_TASK_ID '(NR==nr+1000){print $1}' ../reference/phenotypes.tsv )
+        phe=$(awk -v nr=$SLURM_ARRAY_TASK_ID '(NR==nr){print $1}' ../reference/phenotypes.tsv )
     fi
 else
     phe=$1
