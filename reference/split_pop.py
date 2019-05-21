@@ -11,8 +11,9 @@ with open(in_pop, 'r') as f:
 
 # make splits
 random.shuffle(fid_iid)
-n1 = int(0.6*len(fid_iid))
-n2 = int(0.2*len(fid_iid))
+f_train,f_test = 0.7,0.2 # 0.1 for validation
+n1 = int(f_train * len(fid_iid))
+n2 = int(f_test * len(fid_iid))
 
 # write to files
 outD="/oak/stanford/groups/mrivas/projects/degas-risk/population-split/"
