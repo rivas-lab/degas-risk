@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J DEGWAS
-#SBATCH -p normal,owners,mrivas,jpriest
+#SBATCH -p normal,owners
 #SBATCH --mem=26000
 #SBATCH --cores=4
 #SBATCH -t 1-00:00:00
