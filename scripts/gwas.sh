@@ -20,12 +20,18 @@ fi
 # loop over variants on one/both arrays
 out_prefix="/oak/stanford/groups/mrivas/projects/degas-risk/summary-stats/train/ukb24983_v2.degas-val"
 for kind in "one_array" "both_array"; do 
+    # what to do with the variants on one array
+    if [ $kind == "one_array" ]; then 
+        mode="--extract";
+    else 
+        mode="--exclude";
+    fi
     # run GWAS
-    plink2 --bpfile /oak/stanford/groups/mrivas/private_data/ukbb/24983/cal/pgen/ukb24983_cal_cALL_v2 \
+    plink2 --bpfile /oak/stanford/groups/mrivas/private_data/ukbb/24983/array_combined/pgen/ukb24983_cal_hla_cnv \
            --chr 1-22 \
            --covar /oak/stanford/groups/mrivas/ukbb24983/sqc/ukb24983_GWAS_covar.phe \
            --covar-name age sex Array PC1-PC4 \
-           --extract /oak/stanford/groups/mrivas/ukbb24983/sqc/${kind}_variants.txt \
+           $mode /oak/stanford/groups/mrivas/ukbb24983/sqc/one_array_variants.txt \
            --glm firth-fallback hide-covar omit-ref \
            --keep /oak/stanford/groups/mrivas/projects/degas-risk/population-split/ukb24983_white_british_train.phe \
            --memory 25600 \
