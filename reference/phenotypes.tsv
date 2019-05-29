@@ -1903,7 +1903,6 @@ INI5199	84856	logMAR,_initial_(right)	/oak/stanford/groups/mrivas/ukbb24983/phen
 INI5201	84266	logMAR,_final_(right)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI5201.phe
 INI5206	84823	logMAR,_initial_(left)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5206.phe
 INI5208	84242	logMAR,_final_(left)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI5208.phe
-INI5215	82752	Vertex_distance_(right)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5215.phe
 INI5237	79829	3mm_index_of_best_keratometry_results_(right)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5237.phe
 INI5251	70056	6mm_index_of_best_keratometry_results_(right)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5251.phe
 INI5254	81527	Intra-ocular_pressure,_corneal-compensated_(right)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5254.phe
@@ -1914,7 +1913,6 @@ INI5262	81405	Intra-ocular_pressure,_corneal-compensated_(left)	/oak/stanford/gr
 INI5263	81405	Intra-ocular_pressure,_Goldmann-correlated_(left)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5263.phe
 INI5264	81405	Corneal_hysteresis_(left)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5264.phe
 INI5265	81405	Corneal_resistance_factor_(left)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5265.phe
-INI5274	82484	Vertex_distance_(left)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5274.phe
 INI5276	82484	Index_of_best_refractometry_result_(left)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5276.phe
 INI5292	79809	3mm_index_of_best_keratometry_results_(left)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5292.phe
 INI5306	69118	6mm_index_of_best_keratometry_results_(left)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5306.phe
