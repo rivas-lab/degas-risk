@@ -1,11 +1,16 @@
 #!/bin/python
-import sys
+import sys,os
+import numpy as np
+import pandas as pd
+from scipy.linalg import inv,sqrtm
+from sklearn.decomposition import TruncatedSVD
+from scipy.sparse import csr_matrix
 
 # ensure usage
 if len(sys.argv) < 3:
 	print("usage: python tsvd.py /path/to/dataset.pkl.gz n_pcs")
 	sys.exit(2)
-cca = True 
+cca = False 
 
 # parse
 import os
@@ -16,12 +21,8 @@ dataset_name = '_'.join([datum for datum in dataset_info] + [str(n)+'PCs'])
 dataset_name += '_cca' if cca else ''
 
 # these are useful
-import numpy as np
-import pandas as pd
-from scipy.linalg import inv,sqrtm
-from sklearn.decomposition import TruncatedSVD
-from scipy.sparse import csr_matrix
 phe_corr='/oak/stanford/groups/mrivas/projects/degas-risk/covars/all_white_british_phe_corr.pkl.gz'
+bim_file='/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar'
 
 # load, do analysis
 data = pd.read_pickle(dataset)
@@ -38,7 +39,7 @@ matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
 US = matt.fit_transform(data.values if cca else csr_matrix(data).values) 
 
 # necessary for allele scoring
-with open('/oak/stanford/groups/mrivas/ukbb24983/cal/pgen/ukb24983_cal_cALL_v2.pvar', 'r') as f:
+with open(bim_file, 'r') as f:
     id2alt = {line.split()[2]:line.rstrip().split()[-1] for line in f}
 
 # save the results
