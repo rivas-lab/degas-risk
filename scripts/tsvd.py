@@ -5,7 +5,7 @@ import sys
 if len(sys.argv) < 3:
 	print("usage: python tsvd.py /path/to/dataset.pkl.gz n_pcs")
 	sys.exit(2)
-cca = True
+cca = True 
 
 # parse
 import os
@@ -14,7 +14,6 @@ n = int(sys.argv[2])
 dataset_info = os.path.basename(dataset).split('.')[0].split('_')
 dataset_name = '_'.join([datum for datum in dataset_info] + [str(n)+'PCs'])
 dataset_name += '_cca' if cca else ''
-print(dataset_name)
 
 # these are useful
 import numpy as np
@@ -26,14 +25,17 @@ phe_corr='/oak/stanford/groups/mrivas/projects/degas-risk/covars/all_white_briti
 
 # load, do analysis
 data = pd.read_pickle(dataset)
-print("loaded")
+# process differences
 if cca:
     data = data[sorted(data.columns)].fillna(value=0)
     yty  = pd.read_pickle(phe_corr).sort_index().fillna(value=0)
     data = data.dot(inv(sqrtm(yty + (0.99 * np.identity(yty.shape[0])))))
-print("woohoo")
+else:
+    data = data.fillna(value=0)
+# parameters
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
-US = matt.fit_transform(csr_matrix(data.fillna(value=0).values))
+# CCA isn't sparse because of the matrix multiplication above
+US = matt.fit_transform(data.values if cca else csr_matrix(data).values) 
 
 # necessary for allele scoring
 with open('/oak/stanford/groups/mrivas/ukbb24983/cal/pgen/ukb24983_cal_cALL_v2.pvar', 'r') as f:
@@ -48,5 +50,5 @@ np.savez(os.path.join(os.path.dirname(dataset), dataset_name),
          variance_explained_ratio = matt.explained_variance_ratio_,
          label_phe_code = np.array(data.columns),
          label_var = np.array(data.index),
-         label_var_minor_allele = np.array(df.index.map(id2alt.get))
+         label_var_minor_allele = np.array(data.index.map(id2alt.get))
 )
