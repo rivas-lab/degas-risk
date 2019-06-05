@@ -36,7 +36,7 @@ else:
 # parameters
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
 # CCA isn't sparse because of the matrix multiplication above
-US = matt.fit_transform(data.values if cca else csr_matrix(data).values) 
+US = matt.fit_transform(data.values if cca else csr_matrix(data.values)) 
 
 # necessary for allele scoring
 with open(bim_file, 'r') as f:

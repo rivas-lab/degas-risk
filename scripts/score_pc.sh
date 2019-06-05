@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 #SBATCH -p normal,owners,mrivas
 #SBATCH --mem=16000
-#SBATCH -t 2:00:00
+#SBATCH -t 10:00:00
 #SBATCH -J scorePCs
 #SBATCH -o logs/score_pc.%A_%a.out
 set -euo pipefail
@@ -34,7 +34,7 @@ print('\n'.join(['\t'.join(tup) for tup in zip(*[map(str,l) for l in [z['label_v
 name=$(basename $npz )
 plink --bfile "$OAK/private_data/ukbb/24983/cal/pgen/ukb24983_cal_cALL_v2" \
       --score <( python <( echo $pytemp ) ) sum center double-dosage \
-      --out ${outD}/temp_score/${name::-4}_PC${pcx}
+      --out ${outD}/temp_score/${name::-4}_PC${pcx} --memory 16000
 
 # mode 2: score all PCs up to number specified above
 else
@@ -48,7 +48,7 @@ print('\n'.join(['\t'.join(tup) for tup in zip(*[map(str,l) for l in [z['label_v
 name=$(basename $npz )
 plink --bfile "$OAK/private_data/ukbb/24983/cal/pgen/ukb24983_cal_cALL_v2" \
       --score <( python <( echo $pytemp ) ) sum center double-dosage \
-      --out ${outD}/temp_score/${npz::-4}_PC${pcx} 
+      --out ${outD}/temp_score/${npz::-4}_PC${pcx} --memory 16000 
 done
 
 # combine result files
