@@ -35,6 +35,10 @@ print("woohoo")
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
 US = matt.fit_transform(csr_matrix(data.fillna(value=0).values))
 
+# necessary for allele scoring
+with open('/oak/stanford/groups/mrivas/ukbb24983/cal/pgen/ukb24983_cal_cALL_v2.pvar', 'r') as f:
+    id2alt = {line.split()[2]:line.rstrip().split()[-1] for line in f}
+
 # save the results
 np.savez(os.path.join(os.path.dirname(dataset), dataset_name),
          U = US/matt.singular_values_,
@@ -44,4 +48,5 @@ np.savez(os.path.join(os.path.dirname(dataset), dataset_name),
          variance_explained_ratio = matt.explained_variance_ratio_,
          label_phe_code = np.array(data.columns),
          label_var = np.array(data.index),
+         label_var_minor_allele = np.array(df.index.map(id2alt.get))
 )
