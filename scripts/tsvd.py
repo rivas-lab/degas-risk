@@ -28,9 +28,9 @@ phe_corr='/oak/stanford/groups/mrivas/projects/degas-risk/covars/all_white_briti
 data = pd.read_pickle(dataset)
 print("loaded")
 if cca:
-    data = data[sorted(data.columns)]
-    yty  = pd.read_pickle(phe_corr).sort_index()
-    data = data.fillna(value=0).dot(inv(sqrtm(yty + (0.99 * np.identity(yty.shape[0])))))
+    data = data[sorted(data.columns)].fillna(value=0)
+    yty  = pd.read_pickle(phe_corr).sort_index().fillna(value=0)
+    data = data.dot(inv(sqrtm(yty + (0.99 * np.identity(yty.shape[0])))))
 print("woohoo")
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
 US = matt.fit_transform(csr_matrix(data.fillna(value=0).values))
