@@ -13,7 +13,6 @@ if len(sys.argv) < 3:
 cca = False 
 
 # parse
-import os
 dataset = sys.argv[1]
 n = int(sys.argv[2])
 dataset_info = os.path.basename(dataset).split('.')[0].split('_')
