@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 #SBATCH -p normal,owners,mrivas
 #SBATCH --mem=16000
 #SBATCH -t 10:00:00

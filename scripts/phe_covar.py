@@ -20,9 +20,12 @@ for pheno in phe.columns:
         phe[pheno] -= 1
 
 # compute correlation
-corr = phe.corr(method='pearson')
+# c = phe.corr(method='pearson')
+
+# compute covariance
+c = phe.cov()
 
 # write to file
-out_prefix='/oak/stanford/groups/mrivas/projects/degas-risk/covars/' + pop_name + '_phe_corr'
-corr.to_pickle(out_prefix + '.pkl.gz')
-corr.to_csv(out_prefix + '.txt', sep='\t') 
+out_prefix='/oak/stanford/groups/mrivas/projects/degas-risk/covars/' + pop_name + '_phe_covar'
+c.to_pickle(out_prefix + '.pkl.gz')
+c.to_csv(out_prefix + '.txt', sep='\t') 
