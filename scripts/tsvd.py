@@ -2,7 +2,6 @@
 import sys,os
 import numpy as np
 import pandas as pd
-from scipy.linalg import inv,sqrtm
 from sklearn.decomposition import TruncatedSVD
 from scipy.sparse import csr_matrix
 
@@ -10,7 +9,7 @@ from scipy.sparse import csr_matrix
 if len(sys.argv) < 3:
 	print("usage: python tsvd.py /path/to/dataset.pkl.gz n_pcs")
 	sys.exit(2)
-cca = False 
+cca = True 
 
 # parse
 dataset = sys.argv[1]
@@ -24,14 +23,19 @@ phe_corr='/oak/stanford/groups/mrivas/projects/degas-risk/covars/all_white_briti
 bim_file='/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar'
 
 # load, do analysis
-data = pd.read_pickle(dataset)
-# process differences
+data = pd.read_pickle(dataset).fillna(value=0)
+# process input -- this is a helper for CCA
+def mat_sqrt_inv(x):
+    # x = a.diag(d).aT
+    d,a = np.linalg.eig(x)
+    d = np.diag(map(lambda i:i**(-1/2) if i > 0 else 0, d))
+    return a.dot(d).dot(a)
 if cca:
-    data = data[sorted(data.columns)].fillna(value=0)
+    data = data[sorted(data.columns)]
     yty  = pd.read_pickle(phe_corr).sort_index().fillna(value=0)
-    data = data.dot(inv(sqrtm(yty + (0.99 * np.identity(yty.shape[0])))))
-else:
-    data = data.fillna(value=0)
+    yty  = yty[sorted(yty.columns)]
+    data = data.dot(mat_sqrt_inv(yty + (0.99 * np.eye(yty.shape[0]))))
+
 # parameters
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
 # CCA isn't sparse because of the matrix multiplication above
