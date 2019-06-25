@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import TruncatedSVD
 from scipy.sparse import csr_matrix
+from copy import deepcopy
 
 # ensure usage
 if len(sys.argv) < 3:
@@ -31,10 +32,12 @@ def mat_sqrt_inv(x):
     d = np.diag(map(lambda i:i**(-1/2) if i > 0 else 0, d))
     return a.dot(d).dot(a)
 if cca:
-    data = data[sorted(data.columns)]
+    phes = deepcopy(sorted(data.columns))
+    data = data[phes]
     yty  = pd.read_pickle(phe_corr).sort_index().fillna(value=0)
-    yty  = yty[sorted(yty.columns)]
+    yty  = yty[phes]
     data = data.dot(mat_sqrt_inv(yty + (0.99 * np.eye(yty.shape[0]))))
+    data.columns = phes
 
 # parameters
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
