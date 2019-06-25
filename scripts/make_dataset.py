@@ -1,60 +1,77 @@
 #!/bin/python
-import glob
+import sys
+import os
 import numpy as np
 import pandas as pd
+from sklearn.externals import joblib
 
-# pvalue cutoff for var::phe association
-p = 0.01
-# z-statistic instead of beta?
-z = True
-# z-score values by phenotype?
-c = False
+_README_="""
+A script to subset pickled dataframes (output from master_dataset.py) for use in DEGAS (tsvd.py).
+(you'll probably want at least 64Gb memory for this)
 
-# find files to import
-with open('../reference/summary_stats_gbe.tsv', 'r') as f:
-	file_ref = [(line.split()[0],line.rstrip().split()[1:]) for line in f]
+Author: Matthew Aguirre (SUNET: magu)
+"""
 
-# only keep variants not in LD, MAF > 0.01%, and QC'd
-with open('../reference/variant_qc.prune.in', 'r') as f:
-	var_set = set([line.rstrip() for line in f])
+def load_p_and_se(dataset):
+    rename=lambda s,k:s.replace('_z_','_'+k+'_').replace('_beta_','_'+k+'_')
+    pf,sef=rename(dataset,'p'),rename(dataset,'se')
+    return joblib.load(pf), joblib.load(sef)
 
-# get alt alleles -- need to standardize summary stats ALT allele
-var_alt = {var:None for var in var_set}
-with open('/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar', 'r') as f:
-	for line in f:
-		chrom,pos,var,ref,alt = line.rstrip().split()
-		var_alt[var] = alt	
 
-# helper function to load files
-def get_summary_stats(files, p=0.01, z=True):
-	# load data, perform p-value and LD pruning
-	binary,qt = 'logistic' in files[0], 'linear' in files[0]
-	maxerr = 0.8 if qt else 0.2 if binary else 0 # error catch
-	x = pd.concat([pd.read_table(f, index_col=2) for f in files]).dropna()
-	x = x[(x['P'] < p) & (x['TEST'] == "ADD") & (x.index.isin(var_set)) & (x['SE'] < maxerr)]
-	x['SIGN'] = 2*x['ALT'].eq(x['A1']) - 1 # 1 if ALT is A1 else -1
-	# take LOR if binary, manage z-scoring
-	if qt:
-		return x['T_STAT' if z else 'BETA'].divide(x['SIGN'])
-	elif binary:
-		return x['Z_STAT' if z else 'OR'].apply(np.log if z else lambda x:x).divide(x['SIGN'])
-	else:
-		exit(1)
+def make_dataset(dataset, out, p_star=0.01, center=True):
+    # keep variants not in LD, MAF > 0.01%, and QC'd; get their alt alleles
+    with open('../reference/variant_qc.prune.in', 'r') as f:
+        var_set = set([line.rstrip() for line in f])
+    var_alt = {var:None for var in var_set}
+    with open('/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar', 'r') as f:
+        for line in f:
+            chrom,pos,var,ref,alt = line.rstrip().split()
+            var_alt[var] = alt    
+    # load data
+    data=joblib.load(dataset)
+    p,se=load_p_and_se(dataset)
+    # filter by p-value and SE (0.2 if binary else 0.08); center if specified
+    qts=[x for x in se.columns if 'INI' in x or 'QT' in x]
+    df=data[(p < p_star) & (se < 0.2) & ~((se.isin(se[qts])) & (se >= 0.08))]
+    if center:
+        df=df.subtract(df.mean()).divide(data.std())
+    # sparsify and write to file
+    df.to_sparse().to_pickle(out, compression='gzip')
+    return
 
-# load data one phenotype at a time
-data = pd.SparseDataFrame(index=var_set)
-for phe_id,files in file_ref:
-	data[phe_id] = get_summary_stats(files, p=p, z=z)
-# center betas/z-stats by rows (phenotype-level normalization)
-if c:
-	data = data.subtract(data.mean()).divide(data.std())
 
-# name and save
-dataset_name = '_'.join(('all',
-                         'z' if z else 'beta',
-                         'center' if c else 'nonCenter',
-                         'p'+str(p).replace('.',''),
-                         str(pd.Timestamp.today()).split()[0].replace('-','')))
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=_README_
+    )
+    def p_value(p):
+        if float(p) < 0 or float(p) > 1:
+            raise argparse.ArgumentTypeError("%s is an invalid p-value" % p)
+        return float(p)    
+    parser.add_argument('--p', dest="p", required=True, nargs=1, type=p_value,
+                            default=0.01,
+                            help='Minimum p-value threshold for inclusion.')
+    parser.add_argument('--center', dest="center", action='store_true',
+                            help='Standardize columns (phenotypes).') 
+    bz=parser.add_mutually_exclusive_group()
+    bz.add_argument('--beta', dest="beta", action='store_false',
+                        help='Use regression coefficients for dataset.') 
+    bz.add_argument('--z', dest="z", action='store_true',
+                        help='Use regression z-statistics for dataset.')
+    args=parser.parse_args()
+    c,p=args.center,float(args.p[0])
+    # input/output naming
+    path=os.path.join('/oak/stanford/groups/mrivas/projects/degas-risk/',
+                      'datasets/all_pop',
+                      '_'.join(('all','z' if args.z else 'beta',
+                                'nonCenter_20190621.full_df.pkl.gz')))
+    outP=os.path.join(os.path.dirname(path), 
+                      '_'.join(('all','z' if args.z else 'beta',
+                                'center' if c else 'nonCenter',
+                                'p'+str(p).replace('.',''), 
+                                '20190621.full_df.pkl.gz')))
+    # everything else goes here
+    make_dataset(dataset=path, out=outP, p_star=p, center=c)
 
-path='/oak/stanford/groups/mrivas/projects/degas-risk/datasets/all_pop/'
-data.to_pickle(path + dataset_name + '.full_df.pkl.gz', compression='gzip')
