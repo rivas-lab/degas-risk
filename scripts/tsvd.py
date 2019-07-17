@@ -10,7 +10,9 @@ from copy import deepcopy
 if len(sys.argv) < 3:
 	print("usage: python tsvd.py /path/to/dataset.pkl.gz n_pcs")
 	sys.exit(2)
-cca = True 
+cca = False 
+score = True
+center = False
 
 # parse
 dataset = sys.argv[1]
@@ -24,8 +26,18 @@ phe_corr='/oak/stanford/groups/mrivas/projects/degas-risk/covars/all_white_briti
 bim_file='/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar'
 
 # load, do analysis
-data = pd.read_pickle(dataset).fillna(value=0)
-# process input -- this is a helper for CCA
+data = pd.read_pickle(dataset)
+
+# process input -- subset to phenotypes with at least 2 hits with p < p_star
+data = data[[phe for phe in data if data[phe].count() > 1]]
+# center data
+if center:
+    dataset_name = dataset_name.replace('nonCenter','center')
+    data = data.subtract(data.mean()).divide(data.std())
+# impute zeros -- for some reason df.fillna() leaves some nulls
+data = pd.DataFrame(np.nan_to_num(data.values), index=data.index, columns=data.columns)
+
+# this is a helper for CCA
 def mat_sqrt_inv(x):
     # x = a.diag(d).aT
     d,a = np.linalg.eig(x)
@@ -33,14 +45,14 @@ def mat_sqrt_inv(x):
     return a.dot(d).dot(a)
 if cca:
     phes = deepcopy(sorted(data.columns))
-    data = data[phes]
     yty  = pd.read_pickle(phe_corr).sort_index().fillna(value=0)
     yty  = yty[phes]
-    data = data.dot(mat_sqrt_inv(yty + (0.99 * np.eye(yty.shape[0]))))
+    data = data[phes].dot(mat_sqrt_inv(yty + (0.99 * np.eye(yty.shape[0]))))
     data.columns = phes
 
-# parameters
+# do TSVD with these parameters
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
+
 # CCA isn't sparse because of the matrix multiplication above
 US = matt.fit_transform(data.values if cca else csr_matrix(data.values)) 
 
@@ -49,7 +61,7 @@ with open(bim_file, 'r') as f:
     id2alt = {line.split()[2]:line.rstrip().split()[-1] for line in f}
 
 # save the results
-np.savez(os.path.join(os.path.dirname(dataset), dataset_name),
+np.savez(os.path.join(os.path.dirname(dataset), 'cca' if cca else 'tsvd', dataset_name),
          U = US/matt.singular_values_,
          V = matt.components_.T,
          D = matt.singular_values_,
@@ -59,3 +71,16 @@ np.savez(os.path.join(os.path.dirname(dataset), dataset_name),
          label_var = np.array(data.index),
          label_var_minor_allele = np.array(data.index.map(id2alt.get))
 )
+# optional -- do allele scoring
+if score:
+    prs_dir='/oak/stanford/groups/mrivas/projects/degas-risk/scorefiles/'
+    weights=prs_dir+dataset_name+'.prs.weights.txt'
+    pd.DataFrame(np.hstack((np.array(data.index).reshape(-1,1),
+                            np.array(data.index.map(id2alt.get)).reshape(-1,1),
+                            US))
+                ).to_csv(weights, sep='\t', header=False, index=False)
+    os.system('ml load plink2')
+    os.system(' '.join(['plink2 --bfile ', bim_file[:-5], '--memory 30000', 
+                        '--score', weights, 'center', 'cols=nmissallele,denom,scoresums',
+                        '--score-col-nums', '3-{}'.format(2+n),
+                        '--out', prs_dir+dataset_name]))
