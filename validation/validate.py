@@ -1,7 +1,7 @@
 #!/bin/python
 import numpy as np
 import pandas as pd
-import sys
+import sys,os
 
 # ensure usage, process input
 if len(sys.argv) < 3:
@@ -16,7 +16,7 @@ else:
     if len(sys.argv) > 3:
         phe=sys.argv[3:]
     else:
-        phe=pd.read_table('../reference/phenotypes.tsv').iloc[:,0].tolist()
+        phe=list(npz['label_phe_code']) 
 
 # load data: train (wbr) and test (nbw) populations and phenotype values
 wbr=pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/sqc/population_'+
@@ -35,10 +35,13 @@ wbr=list(filter(lambda i: i in data.index, wbr))
 nbw=list(filter(lambda i: i in data.index, nbw))
 
 # compute validation for all phenotypes
-for phe_id in phe:
-    weights=npz['V'][np.where(npz['label_phe_code'] == phe_id),:].flatten()
-    data['SCORE']=data.iloc[:,-500:].dot(weights)
-    r1=data.loc[wbr,['SCORE',phe_id]].corr(method='spearman').iloc[0,1]
-    r2=data.loc[nbw,['SCORE',phe_id]].corr(method='spearman').iloc[0,1]
-    print('\t'.join([phe_id,str(r1),str(r2)]))
-
+out=os.path.join(os.path.dirname(sys.argv[2]), 'results', 
+                os.path.splitext(os.path.basename(sys.argv[2]))[0]+'.pearsonr.tsv')
+data['SCORE']=0
+with open(out, 'w') as o:
+    for phe_id in phe:
+        weights=npz['V'][np.where(npz['label_phe_code'] == phe_id),:].flatten()
+        data['SCORE']=data.iloc[:,-501:-1].dot(weights)
+        r1=data.loc[wbr,['SCORE',phe_id]].corr(method='pearson').iloc[0,1]
+        r2=data.loc[nbw,['SCORE',phe_id]].corr(method='pearson').iloc[0,1]
+        o.write('\t'.join([phe_id,str(r1),str(r2)])+'\n')
