@@ -53,10 +53,10 @@ with open(out, 'w') as o:
         data['SCORE']=data.iloc[:,-501:-1].dot(weights)
         for pop in [wbr,nbw]:
             r1=data.loc[pop,['SCORE',phe_id]].corr().iloc[0,1]
-            nm=model(formula=phe_id+'~'+covs, data=data.loc[pop]).fit()
+            nm=model(formula=phe_id+'~'+covs, data=data.loc[pop,:]).fit()
             r2=ols(nm.pearson_resid, data.loc[pop,'SCORE']).fit().rsquared_adj
             r3=model(formula=phe_id+'~'+covs+'+SCORE', 
-                        data=data.loc[pop]).fit().rsquared_adj
+                        data=data.loc[pop,:]).fit().rsquared_adj
             r4=nm.rsquared_adj
             o.write('\t'.join(map(str,[r1,r2,r3,r4])))
         o.write('\n')
