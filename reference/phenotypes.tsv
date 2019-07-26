@@ -85,6 +85,7 @@ BIN22130	1272	Doctor_diagnosed_COPD_(chronic_obstructive_pulmonary_disease)	/oak
 BIN22133	366	Doctor_diagnosed_sarcoidosis	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/BIN22133.phe
 BIN22134	760	Doctor_diagnosed_bronchiectasis	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/BIN22134.phe
 BIN22137	442	Doctor_diagnosed_tuberculosis	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/BIN22137.phe
+BIN22140	103	Doctor_diagnosed_lung_cancer_(not_mesothelioma)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/BIN22140.phe
 BIN22502	11783	Cough_on_most_days	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/BIN22502.phe
 BIN22504	7240	Bring_up_phlegm/sputum/mucus_on_most_days	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/BIN22504.phe
 BIN2415	100818	Had_major_operations	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/BIN2415.phe
@@ -883,7 +884,6 @@ INI2149	279021	Lifetime_number_of_sexual_partners	/oak/stanford/groups/mrivas/uk
 INI22146	19546	Age_hayfever_or_allergic_rhinitis_diagnosed_by_doctor	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI22146.phe
 INI22147	10935	Age_asthma_diagnosed_by_doctor	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI22147.phe
 INI22150	1272	Age_COPD_(Chronic_Obstructive_Pulmonary_Disease)_diagnosed_by_doctor	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI22150.phe
-INI22160	103	Age_lung_cancer_(not_mesothelioma)_diagnosed_by_doctor	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI22160.phe
 INI2217	293668	Age_started_wearing_glasses_or_contact_lenses	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI2217.phe
 INI22400	799	Liver_iron_(Fe)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/2001440/27645/phe/INI22400.phe
 INI22401	792	Liver_inflammation_factor_(LIF)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/2001440/27645/phe/INI22401.phe
