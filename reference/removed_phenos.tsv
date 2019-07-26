@@ -90,3 +90,5 @@ INI4145	2650	Heel_bone_mineral_density_(BMD),_manual_entry_(right)	/oak/stanford
 INI4146	2650	Heel_broadband_ultrasound_attenuation_(BUA),_manual_entry_(right)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/2001702/25279/phe/INI4146.phe
 INI4147	2650	Speed_of_sound_through_heel,_manual_entry_(right)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/2001702/25279/phe/INI4147.phe
 INI77	29049	Heel_bone_ultrasound_T-score,_manual_entry	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/2001702/25279/phe/INI77.phe
+BIN22140	103	Doctor_diagnosed_lung_cancer_(not_mesothelioma)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/BIN22140.phe
+INI5430	686	Age_when_loss_of_vision_due_to_injury_or_trauma_diagnosed	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI5430.phe
