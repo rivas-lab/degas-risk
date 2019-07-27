@@ -1,17 +1,17 @@
 #!/bin/bash
 #SBATCH -J DEGWAS
 #SBATCH -p normal,owners,mrivas
-#SBATCH --mem=26000
-#SBATCH --cores=4
-#SBATCH -t 1-00:00:00
-#SBATCH -o logs/degas_train_gwas.%A_%a.out
+#SBATCH --mem=52000
+#SBATCH --cores=8
+#SBATCH -t 2-00:00:00
+#SBATCH -o old_logs/degas_train_gwas.%A_%a.out
 
 # ensure usage
 if [ $# != 1 ]; then
     if [ -z $SLURM_ARRAY_TASK_ID ]; then
         echo "usage: $0 GBE_ID"; exit 1
     else 
-        phe=$(awk -v nr=$SLURM_ARRAY_TASK_ID '(NR==nr+1999){print $1}' ../reference/phenotypes.tsv )
+        phe=$(awk -v nr=$SLURM_ARRAY_TASK_ID '(NR==nr){print $1}' rerun_train_gwas_20190726.tsv )
     fi
 else
     phe=$1
@@ -39,15 +39,16 @@ for kind in "one_array" "both_array"; do
            --chr 1-22 \
            --covar /oak/stanford/groups/mrivas/ukbb24983/sqc/ukb24983_GWAS_covar.phe \
            --covar-name age sex Array PC1-PC4 \
+           --covar-variance-standardize \
            $mode /oak/stanford/groups/mrivas/ukbb24983/sqc/one_array_variants.txt \
            --glm firth-fallback hide-covar omit-ref \
            --keep /oak/stanford/groups/mrivas/projects/degas-risk/population-split/ukb24983_white_british_train.phe \
-           --memory 25600 \
+           --memory 50000 \
            --out "${out_prefix}.${kind}.${phe}" \
            --pheno /oak/stanford/groups/mrivas/ukbb24983/phenotypedata/master_phe/master.phe \
            --pheno-name $phe \
            --pheno-quantile-normalize \
-           --threads 4
+           --threads 8
 done
 
 # combine summary stats
