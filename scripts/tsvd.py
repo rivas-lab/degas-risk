@@ -12,7 +12,7 @@ if len(sys.argv) < 3:
 	sys.exit(2)
 cca = False 
 score = True
-center = False
+center = True
 
 # parse
 dataset = sys.argv[1]
@@ -28,8 +28,9 @@ bim_file='/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal
 # load, do analysis
 data = pd.read_pickle(dataset)
 
-# process input -- subset to phenotypes with at least 2 hits with p < p_star
-data = data[[phe for phe in data if data[phe].count() > 1]]
+# subset to phenotypes in reference list with at least 2 hits at p < p_star
+phe_ref=pd.read_table("../reference/phenotypes.tsv").iloc[:,0].tolist()
+data = data[[phe for phe in phe_ref if data[phe].count() > 1]]
 # center data
 if center:
     dataset_name = dataset_name.replace('nonCenter','center')
