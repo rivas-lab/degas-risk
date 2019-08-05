@@ -64,7 +64,7 @@ if __name__ == "__main__":
     c,p=args.center,float(args.p[0])
     # input/output naming
     path=os.path.join('/oak/stanford/groups/mrivas/projects/degas-risk/',
-                      'datasets/all_pop',
+                      'datasets/train',
                       '_'.join(('all','z' if args.z else 'beta',
                                 'nonCenter_20190621.full_df.pkl.gz')))
     outP=os.path.join(os.path.dirname(path), 
