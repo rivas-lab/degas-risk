@@ -61,3 +61,7 @@ INI23098	331467	Weight	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/11139
 BIN2316	337150	Wheeze_or_whistling_in_the_chest_in_last_year	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/10137/phe/BIN2316.phe
 BIN_FC10001980	189254	Worrier_/_anxious_feelings	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/BIN_FC10001980.phe
 BIN_FC10002000	158258	Worry_too_long_after_embarrassment	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/BIN_FC10002000.phe
+BIN826	337151	Job_involves_shift_work	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/extras/physical_activity/phe/BIN826.phe
+INI189	336752	Townsend_deprivation_index_at_recruitment	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI189.phe
+INI3659	5580	Year_immigrated_to_UK_(United_Kingdom)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI3659.phe
+INI5364	95193	Average_weekly_intake_of_other_alcoholic_drinks	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI5364.phe
