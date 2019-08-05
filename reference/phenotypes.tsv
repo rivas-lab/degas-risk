@@ -1687,13 +1687,11 @@ INI30130	327431	Monocyte_count	/oak/stanford/groups/mrivas/ukbb24983/phenotypeda
 INI30140	327431	Neutrophill_count	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30140.phe
 INI30150	327431	Eosinophill_count	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30150.phe
 INI30160	327431	Basophill_count	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30160.phe
-INI30170	327273	Nucleated_red_blood_cell_count	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30170.phe
 INI30180	327434	Lymphocyte_percentage	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30180.phe
 INI30190	327434	Monocyte_percentage	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30190.phe
 INI30200	327434	Neutrophill_percentage	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30200.phe
 INI30210	327434	Eosinophill_percentage	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30210.phe
 INI30220	327434	Basophill_percentage	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30220.phe
-INI30230	327270	Nucleated_red_blood_cell_percentage	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30230.phe
 INI30240	322885	Reticulocyte_percentage	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30240.phe
 INI30250	322886	Reticulocyte_count	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30250.phe
 INI30260	322886	Mean_reticulocyte_volume	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI30260.phe
