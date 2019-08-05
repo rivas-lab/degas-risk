@@ -1843,8 +1843,6 @@ INI894	255639	Duration_of_moderate_activity	/oak/stanford/groups/mrivas/ukbb2498
 INI904	322069	Number_of_days/week_of_vigorous_physical_activity_10+_minutes	/oak/stanford/groups/mrivas/private_data/ukbb/24983/phenotypedata/10136/25826/phe/INI904.phe
 INI914	189085	Duration_of_vigorous_activity	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/10136/21731/phe/INI914.phe
 INI924	335301	Usual_walking_pace	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/extras/physical_activity/phe/INI924.phe
-INI93	32193	Systolic_blood_pressure,_manual_reading	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI93.phe
-INI94	32193	Diastolic_blood_pressure,_manual_reading	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI94.phe
 INI95	32193	Pulse_rate_(during_blood-pressure_measurement)	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/9796/24611/phe/INI95.phe
 INI971	241835	Frequency_of_walking_for_pleasure_in_last_4_weeks	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/extras/physical_activity/phe/INI971.phe
 INI981	315393	Duration_walks	/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/extras/physical_activity/phe/INI981.phe
