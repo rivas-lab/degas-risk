@@ -66,12 +66,12 @@ if __name__ == "__main__":
     path=os.path.join('/oak/stanford/groups/mrivas/projects/degas-risk/',
                       'datasets/train',
                       '_'.join(('all','z' if args.z else 'beta',
-                                'nonCenter_20190621.full_df.pkl.gz')))
+                                'nonCenter_20190805.full_df.pkl.gz')))
     outP=os.path.join(os.path.dirname(path), 
                       '_'.join(('all','z' if args.z else 'beta',
                                 'center' if c else 'nonCenter',
                                 'p'+str(p).replace('.',''), 
-                                '20190621.full_df.pkl.gz')))
+                                '20190805.full_df.pkl.gz')))
     # everything else goes here
     make_dataset(dataset=path, out=outP, p_star=p, center=c)
 

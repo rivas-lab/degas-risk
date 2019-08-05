@@ -29,8 +29,9 @@ bim_file='/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal
 data = pd.read_pickle(dataset)
 
 # subset to phenotypes in reference list with at least 2 hits at p < p_star
+exclude=pd.read_table("../reference/blacklist.txt").iloc[:,0].tolist()
 phe_ref=pd.read_table("../reference/phenotypes.tsv").iloc[:,0].tolist()
-data = data[[phe for phe in phe_ref if data[phe].count() > 1]]
+data = data[[i for i in phe_ref if data[phe].count() > 1 and i not in exclude]]
 # center data
 if center:
     dataset_name = dataset_name.replace('nonCenter','center')
