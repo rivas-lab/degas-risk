@@ -30,13 +30,13 @@ else:
     else:
         phe=list(npz['label_phe_code']) 
 
-# load data: train (wbr) and test (nbw) populations and phenotype values
-wbr=pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/sqc/population_'+
-                  'stratification/ukb24983_white_british.phe',
-                   header=None).iloc[:,0].tolist()
-nbw=pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/sqc/population_'+
-                  'stratification/ukb24983_non_british_white.phe',
-                   header=None).iloc[:,0].tolist()
+# load data: train and test populations and phenotype values
+train=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
+                    'population-split/ukb24983_white_british_train.phe',
+                    usecols=[0]).values.flatten().tolist()
+test=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
+                    'population-split/ukb24983_white_british_test.phe',
+                    usecols=[0]).values.flatten().tolist()
 phenos=pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/'+
                      'master_phe/master.phe', 
                      usecols=['IID','age','sex','PC1','PC2','PC3','PC4']+phe,
@@ -47,8 +47,8 @@ phenos[[p for p in phe if 'INI' not in p and 'QT' not in p]] -= 1
 
 # combine data and redefine cohorts 
 data=pd.merge(phenos, pcs, left_index=True, right_index=True)
-wbr=list(filter(lambda i: i in data.index, wbr))
-nbw=list(filter(lambda i: i in data.index, nbw))
+train=list(filter(lambda i: i in data.index, train))
+test=list(filter(lambda i: i in data.index, test))
 
 # set up output file, initialize scores, metrics, and null model formula
 out=os.path.join(os.path.dirname(pc_f), 'results', 
@@ -56,7 +56,7 @@ out=os.path.join(os.path.dirname(pc_f), 'results',
                                                           str(npc)+'PC')))[0]+
            '.pearsonr.tsv')
 data['SCORE']=0
-cols=[x+'_'+y for x in ['WBR','NBW'] for y in ['RAW','RESID','JOINT','COVAR']]
+cols=[x+'_'+y for x in ['TRAIN','TEST'] for y in ['RAW','RESID','JOINT','COVAR']]
 
 # compute validation for all phenotypes
 with open(out, 'w') as o:
@@ -65,7 +65,7 @@ with open(out, 'w') as o:
         model=ols if 'INI' in phe_id or 'QT' in phe_id else logit
         w=npz['V'][np.where(npz['label_phe_code']==phe_id),:].flatten()[:npc]
         data['SCORE']=data.iloc[:,-501:-(501-npc)].dot(w)
-        for ix,pop in enumerate([wbr,nbw]):
+        for ix,pop in enumerate([train,test]):
             pop=data.loc[pop,[phe_id,'SCORE']].dropna().index.tolist()
             r1=data.loc[pop,['SCORE',phe_id]].corr().iloc[0,1]
             try:
