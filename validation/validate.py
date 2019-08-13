@@ -34,8 +34,9 @@ else:
 train=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
                     'population-split/ukb24983_white_british_train.phe',
                     usecols=[0]).values.flatten().tolist()
+# evaluation is in a test set (valid.phe) of 10% of WBR
 test=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
-                    'population-split/ukb24983_white_british_test.phe',
+                    'population-split/ukb24983_white_british_valid.phe',
                     usecols=[0]).values.flatten().tolist()
 phenos=pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/'+
                      'master_phe/master.phe', 
