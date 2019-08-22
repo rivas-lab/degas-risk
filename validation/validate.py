@@ -4,6 +4,7 @@ import pandas as pd
 import sys,os
 from statsmodels.formula.api import logit,ols
 from statsmodels.api import OLS
+from scipy.stats import pearsonr,spearmanr
 
 # ensure usage, process input
 if len(sys.argv) < 3:
@@ -52,10 +53,12 @@ train=list(filter(lambda i: i in data.index, train))
 test=list(filter(lambda i: i in data.index, test))
 
 # set up output file, initialize scores, metrics, and null model formula
+m='spearman'
+correlate=lambda x,y: spearmanr(x,y)[0] if m=='spearman' else pearsonr(x,y)[0]
 out=os.path.join(os.path.dirname(pc_f), 'results', 
            os.path.splitext(os.path.basename(pc_f.replace('500PC',
                                                           str(npc)+'PC')))[0]+
-           '.pearsonr.tsv')
+           '.'+m+'r.tsv')
 data['SCORE']=0
 cols=[x+'_'+y for x in ['TRAIN','TEST'] for y in ['RAW','RESID','JOINT','COVAR']]
 
@@ -68,19 +71,15 @@ with open(out, 'w') as o:
         data['SCORE']=data.iloc[:,-501:-(501-npc)].dot(w)
         for ix,pop in enumerate([train,test]):
             pop=data.loc[pop,[phe_id,'SCORE']].dropna().index.tolist()
-            r1=data.loc[pop,['SCORE',phe_id]].corr().iloc[0,1]
+            r1=data.loc[pop,['SCORE',phe_id]].corr(method=m).iloc[0,1]
             try:
                 nm=model(formula=phe_id+'~ age+sex+PC1+PC2+PC3+PC4', 
                             data=data.loc[pop,:]).fit()
                 jm=model(formula=phe_id+'~ age+sex+PC1+PC2+PC3+PC4+SCORE', 
                             data=data.loc[pop,:]).fit()
-                r2=OLS(nm.resid_pearson, data.loc[pop,'SCORE']).fit().rsquared_adj
-                if 'INI' in phe_id or 'QT' in phe_id: 
-                    r3=jm.rsquared_adj
-                    r4=nm.rsquared_adj
-                else:
-                    r3=jm.prsquared
-                    r4=nm.prsquared
+                r2=correlate(nm.resid_pearson,data.loc[pop,'SCORE'])
+                r3=correlate(jm.fittedvalues,data.loc[pop,'SCORE'])
+                r4=correlate(nm.fittedvalues,data.loc[pop,'SCORE'])
             except:
                 r2,r3,r4='NA','NA','NA'
             if ix == 0:
