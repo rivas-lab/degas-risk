@@ -78,8 +78,8 @@ with open(out, 'w') as o:
                 jm=model(formula=phe_id+'~ age+sex+PC1+PC2+PC3+PC4+SCORE', 
                             data=data.loc[pop,:]).fit()
                 r2=correlate(nm.resid_pearson,data.loc[pop,'SCORE'])
-                r3=correlate(jm.fittedvalues,data.loc[pop,'SCORE'])
-                r4=correlate(nm.fittedvalues,data.loc[pop,'SCORE'])
+                r3=correlate(jm.fittedvalues,data.loc[pop,phe_id])
+                r4=correlate(nm.fittedvalues,data.loc[pop,phe_id])
             except:
                 r2,r3,r4='NA','NA','NA'
             if ix == 0:
