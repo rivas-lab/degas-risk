@@ -1,5 +1,4 @@
 #!/bin/python
-import sys
 import os
 import numpy as np
 import pandas as pd
@@ -12,17 +11,18 @@ import matplotlib.gridspec as gs
 import seaborn as sns
 import argparse
 from scipy.stats import zscore,pearsonr,spearmanr,gaussian_kde
+from scipy.special import logit,expit
 from scipy.spatial.distance import euclidean
 from sklearn.metrics import roc_curve,roc_auc_score
 from sklearn.preprocessing import normalize
 from sklearn.cluster import KMeans
 from PRS import PRS # custom script to run PRS with DeGAs input data
-
+import sys
 
 ### 1. load data
-phe_codes=sys.argv[1:]
 dataset='/oak/stanford/groups/mrivas/projects/degas-risk/datasets/train/tsvd/all_z_center_p001_20190805_500PCs.npz'
 npc=300
+phe_codes=sys.argv[1:]
 covariates=['age','sex']+['PC'+str(i+1) for i in range(4)]+['1']
 score_pcs=['SCORE{}_SUM'.format(pc+1) for pc in range(npc)]
 profl_pcs=['PROF_PC{}'.format(pc+1) for pc in range(npc)]
@@ -48,8 +48,6 @@ test=set(pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/populati
                          'ukb24983_white_british_test.phe').iloc[:,0].astype(float).tolist())
 nbw=set(pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/sqc/population_stratification/'+
                          'ukb24983_non_british_white.phe').iloc[:,0].astype(float).tolist())
-print(list(map(len,[train,valid,test,nbw])))
-
 
 # 3. analysis
 for phe_code in phe_codes:
@@ -102,33 +100,52 @@ for phe_code in phe_codes:
                 # otherwise just fit and assess within the same group
                 else:
                     models[prs][m][pop_id]=regress(df2.loc[pop,phe_code], df2.loc[pop,params[prs][m]]).fit(disp=0)
-            # re-sort based on adjusted dPRS
-            df2['jPRS']=models[prs]['JOINT'][pop_id].predict(df2[params[prs]['JOINT']])
-            df2=df2.sort_values('jPRS').drop('jPRS', axis=1)
             # compute these stats: # beta/OR of top 2% versus entire group; AUC of joint model (bin); 
             # r of resid model (qt); N; and spearman rho between dPRS and trait (bin & QT)
+            # helper for beta2 and subplot (A) below:
+            def prs_betaci((q0,q1), prs, df):
+                we_print=(q0==2)
+                q0=df[prs].quantile((100-q0)/100.0),  # pandas has 99 as the highest; we have 1 as the highest
+                q1=df[prs].quantile((100-q1)/100.0)
+                q40=df[prs].quantile(0.4)
+                q60=df[prs].quantile(0.6)   
+                iids=df.index[((q0 <= df[prs]) & (df[prs] <= q1)) | ((q40 <= df[prs]) & (df[prs] <= q60))]
+                if is_bin:
+                    data=np.vstack((expit(models['PRS']['COVAR']['train'].predict(df.loc[iids,covariates])), 
+                                    (q0 <= df.loc[iids,prs]) & (df.loc[iids,prs] <= q1))).T
+                    m=Logit(df.loc[iids,phe_code], data).fit(disp=0)
+                    b=np.exp(m.params[1])
+                    ci=np.abs(np.exp(m.conf_int().iloc[1,:].values)-b)
+                else:
+                    data=np.vstack((models['PRS']['COVAR']['train'].predict(df.loc[iids,covariates]), 
+                                    (q0 <= df.loc[iids,prs]) & (df.loc[iids,prs] <= q1))).T
+                    m=OLS(df.loc[iids,phe_code], data).fit(disp=0)
+                    b=m.params[1]
+                    ci=np.abs(m.conf_int().iloc[1,:].values-b)
+                if we_print:
+                    print(b, ci)
+                return b,ci,df.loc[(q0 <= df[prs]) & (df[prs] <= q1),phe_code].mean()
             if is_bin:
-                p1,p2=df2[phe_code].iloc[-int(0.02*len(pop)):].mean(), df2[phe_code].mean() # beta helper
-                stats[prs].loc[pop_id,'beta2']=np.log(p1*(1-p2)/(p2*(1-p1))) # this is log(OR)
+                stats[prs].loc[pop_id,'beta2']=prs_betaci((2,0), prs, df2.loc[pop,:])[0]
                 stats[prs].loc[pop_id,'auc']=roc_auc_score(df2.loc[pop,phe_code], models[prs]['JOINT'][pop_id].predict(
                                                                                     df2.loc[pop,params[prs]['JOINT']]))
                 stats[prs].loc[pop_id,'pearsonr']='na'
                 stats[prs].loc[pop_id,'n']=df2.loc[pop,phe_code].value_counts().loc[1]
             else:
-                stats[prs].loc[pop_id,'beta2']=df2[phe_code].iloc[-int(0.02*len(pop)):].mean() - df2[phe_code].mean()
+                stats[prs].loc[pop_id,'beta2']=prs_betaci((2,0), prs, df2.loc[pop,:])[0]
                 stats[prs].loc[pop_id,'auc']='na'
                 stats[prs].loc[pop_id,'pearsonr']=pearsonr(models[prs]['COVAR'][pop_id].resid, df2.loc[pop,prs])[0]
                 stats[prs].loc[pop_id,'n']=df2.loc[pop,phe_code].shape[0]
             stats[prs].loc[pop_id,'spearmanr']=spearmanr(df2.loc[pop,phe_code],df2.loc[pop,prs])[0]
         stats[prs].to_csv('/oak/stanford/groups/mrivas/projects/degas-risk/final_results/'+prs.lower()+'/'+phe_code+'_'+prs.lower()+'.tsv', sep='\t')
-
-    # 4. Plot setup and execution
-    plt.close('all'); plt.clf()
+   
+    # (4) do the plot thing: first initialize plot objects
+    width = 2
     plots = [None for _ in range(10)]
+    plt.close('all'); plt.clf()
     fig = plt.figure(figsize=(15, 14), dpi=300)
     grid=gs.GridSpec(14, 15, wspace=0, hspace=5)
-
-    # iterate over groups        
+            
     for pop_id,pop in zip(['test'], [test]):
         # setup plot
         plots[0]=plt.subplot(grid[:5,:9])
@@ -143,46 +160,36 @@ for phe_code in phe_codes:
         plots[9]=plt.subplot(grid[10:,12:])
         # take a new subset
         df2=df.loc[[i for i in pop if i in df.index],:].copy().dropna()
-        pop=df2.index.tolist()
-        # (A) do quantile plot with modified (only if binary) phenotype
-        n,nq=len(pop),50
         for prs in ['PRS','dPRS']:
             df2[prs]=zscore(df2[prs])
-            df2['j'+prs]=models[prs]['JOINT']['valid'].predict(df2[params[prs]['JOINT']])
-            df2=df2.sort_values('j'+prs, ascending=True)
-            plots[0].scatter(np.arange(nq), 
-                             [df2.iloc[int(q*n/nq):int((q+1)*n/nq),:][phe_code].mean() for q in range(nq)], 
-                             s=9, c='b' if prs=='dPRS' else 'grey', alpha=0.3+0.7*(prs=='dPRS'))
-        # labels
-        plots[0].set_ylabel('{0}{1}{2}'.format('Mean ' if not is_bin else '',
-                            code_to_name[phe_code], ' prevalence' if is_bin else ''))
-        plots[0].set_xticks(np.arange(1,nq+1,2))
-        plots[0].set_xticklabels([int(100*q/nq) if q%4==1 else '' for q in reversed(range(1,nq+1,2))])
+        pop=df2.index.tolist()
+        # (A) do quantile plot with modified (only if binary) phenotype
+        qs=[(q+5,q) for q in np.arange(5,100,5)[::-1]] + [(5,2),(2,0)]
+        for prs,name in zip(['PRS','dPRS'],['PRS','dPRS']):
+            fits=[prs_betaci(q, prs, df2.loc[pop,:]) for q in qs]
+            plots[0].errorbar(x=np.arange(len(qs)), y=[p[0] for p in fits], yerr=np.array([p[1] for p in fits]).T,
+                                fmt='o', c='b' if name=='dPRS' else 'grey', alpha=0.4+0.6*(name=='dPRS'))
+            if name=='dPRS' and is_bin:
+                p2=df2.loc[(df2.loc[pop,prs].quantile(0.4) <= df2.loc[pop,prs]) & 
+                           (df2.loc[pop,prs] <= df2.loc[pop,prs].quantile(0.6)), phe_code].mean()
+                aax=plots[0].twinx()
+                aax.set_yticks(plots[0].get_yticks())
+                if is_bin:
+                    aax.set_yticklabels(['{:.3f}'.format(k*p2/(1-p2+(k*p2))) if k > 0 else '' 
+                                                         for k in plots[0].get_yticks()])
+                else:
+                    aax.set_yticklabels(['{:.1f}'.format(k+p2) for k in plots[0].get_yticks()])
+                aax.set_ylim(plots[0].get_ylim())
+        # labels    
         plots[0].set_xlabel('(d)PRS quantile')
-        plots[0].plot([0,nq],[df2.loc[pop,phe_code].mean(), df2.loc[pop,phe_code].mean()],'--',color='grey')
-        plots[0].legend(['{0}{1}{2} (n={3})'.format('' if is_bin else 'Mean ',
-                            code_to_name[phe_code],
-                            ' prevalence' if is_bin else '',
-                            int(df2[phe_code].sum()) if is_bin else len(pop))]+['PRS','dPRS'], 
-                loc=2, fontsize=9)
-        # adjust y-axis to display odds ratios or z-scored trait
-        y_r=plots[0].twinx()
-        y1,y2=plots[0].get_ylim()
-        ymax=df2.iloc[-(n/nq):,:][phe_code].mean()
-        if is_bin:
-            or_to_prev=lambda o: o*df2[phe_code].mean()/(1+(df2[phe_code].mean()*(o-1)))
-            y_r.set_yticks([or_to_prev(o) for o in [0,0.5,1,2,3,4,5,6,7,8,9] if ymax > or_to_prev(o-1) and y1 <= or_to_prev(o)])
-            y_r.set_yticklabels(map(lambda s:str(s), filter(lambda o: ymax > or_to_prev(o-1) and y1 <= or_to_prev(o),[0,0.5,1,2,3,4,5,6,7,8,9])))
-        else:
-            y_r.set_yticks([df2[phe_code].mean() + (sd*df2[phe_code].std()) for sd in range(-10,11) 
-                             if sd < y1 and y1-1 < ymax])
-            y_r.set_yticklabels([str(sd) for sd in range(-10,11) if sd < y1 and y1-1 < ymax])
-            y_r.set_ylim(y1, y2)
-            y_r.set_ylabel('OR' if is_bin else 'Trait z',rotation=270, labelpad=20)
-        
+        plots[0].set_xticklabels(list(map(str,qs)), rotation=90)
+        plots[0].set_ylabel(phe_name+' {}'.format('OR/prevalence' if is_bin else 'beta/mean'))
+        plots[0].set_xticks(np.arange(len(qs)))
+        plots[0].legend(['PRS','dPRS'], loc=2, fontsize=9)
+        plots[0].plot(plots[0].get_xlim(),[1 if is_bin else df2[phe_code].mean() for _ in range(2)],'k--',alpha=0.2)
         # (B) plot ROC/correlation plot
         if is_bin:
-        # loop over dPRS and these joint models
+            # loop over dPRS and these joint models
             for w,(prs,mt) in enumerate(zip(['PRS','dPRS','dPRS','dPRS'],['RAW','RAW','COVAR','JOINT'])):
                 # compute stats, plot them
                 fpr,tpr,_=roc_curve(  df2.loc[pop,phe_code], 
@@ -190,7 +197,8 @@ for phe_code in phe_codes:
                 roc_auc=roc_auc_score(df2.loc[pop,phe_code], 
                                       models[prs][mt][pop_id].predict(df2.loc[pop,params[prs][mt]]))
                 plots[1].plot(fpr, tpr, 
-                              label='{0} AUC={1:.3f}'.format(prs if mt=='RAW' else mt.capitalize().replace('r', 'riate'), roc_auc), 
+                              label='{0} AUC={1:.3f}'.format(prs if mt=='RAW' else mt.capitalize().replace('r', 'riate'),
+                                                             roc_auc), 
                               color='b' if w%2 else 'grey', alpha=0.7+0.3*(w%2), linestyle='-' if w/2 else '-.')
             # add null line, axis labels
             plots[1].plot([0, 1],[0, 1],'k--',label='Random classification')
@@ -209,48 +217,51 @@ for phe_code in phe_codes:
             plots[1].set_ylabel(code_to_name[phe_code]+' Residual', rotation=270, labelpad=15)
             plots[1].legend([prs+' '+'$r=$'+'{:.3f}'.format(pearsonr(x[prs], y[prs])[0]) for prs in ['PRS','dPRS']])
             plots[1].set_xlabel('Standardized (d)PRS')
-            plots[1].yaxis.tick_right()
-            plots[1].yaxis.set_label_position("right")
+        plots[1].yaxis.tick_right()
+        plots[1].yaxis.set_label_position("right")
         
         # (C): high risk individuals (first compute profiles)
+        df2.sort_values(by='dPRS', inplace=True, ascending=True)
         for pc in range(npc):
-            df2[profl_pcs[pc]]=(df2[score_pcs[pc]] * weights[pc] * df2['j'+prs]).clip_lower(0)
+            df2[profl_pcs[pc]]=(df2[score_pcs[pc]] * weights[pc] * df2[prs]).clip_lower(0)
         df2[profl_pcs] = normalize(df2[profl_pcs], norm='l1')
         # now plot
         o, pc_plots=50, []
         dfo=df2.iloc[-o:,:][::-1]
-        top5pc=np.argsort(dfo['j'+prs].dot(dfo[profl_pcs])[:npc])[-5:][::-1]
+        top5pc=np.argsort(dfo[prs].dot(dfo[profl_pcs])[:npc])[-5:][::-1]
         for pc in range(npc):
             pp=plots[2].bar(np.arange(o), 
-                            dfo[profl_pcs[pc]] * dfo['j'+prs],
-                            bottom=np.array(dfo[profl_pcs[:pc]].sum(axis=1) * dfo['j'+prs])#,
+                            dfo[profl_pcs[pc]] * dfo[prs],
+                            bottom=np.array(dfo[profl_pcs[:pc]].sum(axis=1) * dfo[prs])#,
+                            # hatch=pcps[pc+1] if pc+1 in pcps else None
                             )
             pc_plots.append(pp)
         # axis labels and such
-        plots[2].set_ylim(0, 1.15*df2['j'+prs].max())
+        plots[2].set_ylim(0, 1.15*df2[prs].max())
         plots[2].set_ylabel(phe_name+' dPRS')
         plots[2].set_xlabel('High risk individuals')
         plots[2].legend([pc_plots[pc] for pc in top5pc], ['PC'+str(pc+1) for pc in top5pc], loc=1)
-
+    
         # (D): outliers (first find them)
         centroid=df2[profl_pcs].median()
         df3=df2.iloc[-int(0.1*len(pop)):]
-        df3.loc[:,'mahal']=df3.loc[:,profl_pcs].apply(lambda x: euclidean(x, centroid), axis=1)
+        df3['mahal']=df3[profl_pcs].apply(lambda x: euclidean(x, centroid), axis=1)
         m_star=df3['mahal'].mean() + 2*df3['mahal'].std()
         outliers=df3.query('mahal > @m_star').index
         
         # now plot them
         dfo=df2.loc[outliers[-o:],:][::-1]
-        top5pc=np.argsort(dfo['j'+prs].dot(dfo[profl_pcs])[:npc])[-5:][::-1]
+        top5pc=np.argsort(dfo[prs].dot(dfo[profl_pcs])[:npc])[-5:][::-1]
         pc_plots2=[]
         for pc in range(npc):
             pp=plots[3].bar(np.arange(o), 
-                            dfo[profl_pcs[pc]] * dfo['j'+prs],
-                            bottom=np.array(dfo[profl_pcs[:pc]].sum(axis=1) * dfo['j'+prs])
+                            dfo[profl_pcs[pc]] * dfo[prs],
+                            bottom=np.array(dfo[profl_pcs[:pc]].sum(axis=1) * dfo[prs])#,
+                            # hatch=pcps[pc+1] if pc+1 in pcps else None
                             )
             pc_plots2.append(pp)
         # axis labels and such
-        plots[3].set_ylim(0, 1.15*df2['j'+prs].max())
+        plots[3].set_ylim(0, 1.15*df2[prs].max())
         plots[3].set_ylabel(''); plots[3].set_yticks([])
         plots[3].set_xlabel('High risk outliers')
         plots[3].legend([pc_plots[pc] for pc in top5pc], ['PC'+str(i+1) for i in top5pc], loc=1)    
@@ -271,11 +282,13 @@ for phe_code in phe_codes:
         x,p = np.arange(k), []
         top5pcs = np.argsort(np.sum(ms, axis=0))[-5:]
         for pc in range(ms.shape[1]):
-            zz=plots[4].bar(x, ms[:,pc], bottom=np.sum(ms[:,0:pc], axis=1), width=0.3),
+            zz=plots[4].bar(x, ms[:,pc], bottom=np.sum(ms[:,0:pc], axis=1), width=0.3)#,
+                                         #hatch=pcps[pc+1] if pc+1 in pcps else None)
             p.append(zz)
         # print out cluster centroids
         for j in range(ms.shape[0]):
-            print(', '.join([': '.join(('PC'+str(pc+1),'{:.1f}%'.format(100*f))) for pc,f in sorted(enumerate(ms[j,:]), key=lambda x:-x[1])[:5]]))
+            print(', '.join([': '.join(('PC'+str(pc+1),'{:.1f}%'.format(100*f))) for pc,f in sorted(enumerate(ms[j,:]), 
+                                                                                           key=lambda x:-x[1])[:5]]))
         # axis label
         plots[4].set_xlabel('')
         plots[4].set_ylabel('Contribution to '+phe_name)
@@ -283,7 +296,7 @@ for phe_code in phe_codes:
         plots[4].set_xlim((-0.4,k+0.4))
         plots[4].set_xticks(np.arange(k))
         plots[4].set_xticklabels([str(x+1)+'\n(n='+str(y)+')' 
-                    for x,y in enumerate(list(pd.Series(cluster.labels_).value_counts()))])
+                                    for x,y in enumerate(list(pd.Series(cluster.labels_).value_counts()))])
         plots[4].legend([p[i] for i in reversed(top5pcs)], ['PC' + str(i+1) for i in reversed(top5pcs)])
         plots[4].yaxis.tick_right()
         plots[4].yaxis.set_label_position("right")
@@ -303,24 +316,27 @@ for phe_code in phe_codes:
                                      bottom=np.sum(z['V'][ranked_phes[:ix],pc]**2),
                                      label=code_to_name[z['label_phe_code'][phe_ix]],
                                      hatch=patterns[(ix + 4) % len(patterns) ]
-                                     )
+                                    )
                 else: ix-=1; break
             ix+=1
             # add grey bar on top
             plots[5+pcx].bar([0], [1-(np.sum(z['V'][ranked_phes[:ix],pc]**2)/np.sum(z['V'][:,pc]**2))],
-                     bottom=np.sum(z['V'][ranked_phes[:ix],pc]**2)/np.sum(z['V'][:,pc]**2), 
-                     color='silver', label='Others')
+                             bottom=np.sum(z['V'][ranked_phes[:ix],pc]**2)/np.sum(z['V'][:,pc]**2), 
+                             color='silver', label='Others')
             # adjust figure ticks/limits; add labels
             plots[5+pcx].set_ylim(0,1); 
             plots[5+pcx].set_xlim(0,2.3)
             plots[5+pcx].set_xticks([],[])
             plots[5+pcx].set_xlabel('PC{0}: ({1:.1f}%)'.format(pc+1, 100*((V[pix,pc]**2)/np.sum(V[pix,:]**2))[0][0]), 
-                                    horizontalalignment='left', x=0.0)
+                                     horizontalalignment='left', x=0.0)
             if pcx==0:
                 plots[5].set_ylabel(code_to_name[phe_code])
             else:
                 plots[5+pcx].set_yticklabels(['' for _ in plots[5+pcx].get_yticks()])
             lgd=plots[5+pcx].legend(loc='upper left', bbox_to_anchor=(0.165, 1.015), frameon=False, fontsize=8)    
-        # done
+        
+        # at the end: display lexicographic labels
+        # for i in range(6):
+        #     plots[i].text(-0.1, 1.05, chr(i+65), fontsize=16, transform=plots[i].transAxes)
         fig.savefig("/oak/stanford/groups/mrivas/projects/degas-risk/final_results/plots/"+phe_code+"_"+pop_id+".png", bbox_inches='tight')
-
+    
