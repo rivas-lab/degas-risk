@@ -250,6 +250,7 @@ for phe_code in phe_codes:
         outliers=df3.query('mahal > @m_star').index
         
         # now plot them
+        o=min(len(outliers),o)
         dfo=df2.loc[outliers[-o:],:][::-1]
         top5pc=np.argsort(dfo[prs].dot(dfo[profl_pcs])[:npc])[-5:][::-1]
         pc_plots2=[]
