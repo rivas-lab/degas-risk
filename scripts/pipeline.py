@@ -69,6 +69,9 @@ for phe_code in phe_codes:
     if is_bin: 
         df[phe_code]-=1
         regress=Logit
+        # attempt to remove sex as covariate for sex-specific traits like prostate cancer
+        if any([len(df.loc[df[phe_code]==sex,'sex'].value_counts())==1 for sex in [0,1]]):
+            covariates.remove('sex')
     else:
         regress=OLS
     # setup for regression models
@@ -272,11 +275,12 @@ for phe_code in phe_codes:
         cluster = KMeans(n_clusters=k, n_init=25).fit(df3.loc[outliers,profl_pcs])
         pre_frac = 0.8 - 10.0/len(outliers)
         errors = [cluster.inertia_]
-        for new_k in [2,3,4,5]:
-            new_cluster = KMeans(n_clusters=new_k, n_init=25).fit(df3.loc[outliers,profl_pcs])
-            errors.append(new_cluster.inertia_)
-            if new_cluster.inertia_ / cluster.inertia_ < pre_frac**(new_k - k): 
-                cluster,k = new_cluster,new_k
+        if len(outliers) > 5: # don't try to cluster a trivial number of cases
+            for new_k in [2,3,4,5]:
+                new_cluster = KMeans(n_clusters=new_k, n_init=25).fit(df3.loc[outliers,profl_pcs])
+                errors.append(new_cluster.inertia_)
+                if new_cluster.inertia_ / cluster.inertia_ < pre_frac**(new_k - k): 
+                    cluster,k = new_cluster,new_k
         
         # now plot them
         ms = cluster.cluster_centers_[0:k]
