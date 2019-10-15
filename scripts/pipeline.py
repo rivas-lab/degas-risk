@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 from statsmodels.api import OLS,Logit
+from statsmodels.tools.sm_exceptions import * 
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -65,15 +66,12 @@ for phe_code in phe_codes:
     weights=z['V'][np.where(z['label_phe_code'] == phe_code),:].flatten()[:npc]
     df['dPRS']=df[score_pcs].dot(weights)
     # is trait binary or quantitative?
-    is_bin=(len(df[phe_code].value_counts()) == 2)
+    is_bin=(len(df[phe_code].value_counts()) == 2) and 'INI' not in phe_code
     if is_bin: 
         df[phe_code]-=1
-        regress=Logit
         # attempt to remove sex as covariate for sex-specific traits like prostate cancer
         if any([len(df.loc[df[phe_code]==sex,'sex'].value_counts())==1 for sex in [0,1]]):
             covariates.remove('sex')
-    else:
-        regress=OLS
     # setup for regression models
     models={prs:{m:{} for m in ['RAW','COVAR','RESID','JOINT']} for prs in ['PRS','dPRS']}
     params={prs:{'RAW':[prs], 'COVAR':covariates, 'JOINT':covariates+[prs]} for prs in ['PRS','dPRS']}
@@ -82,7 +80,9 @@ for phe_code in phe_codes:
     # iterate through populations, fit/predict/compute stats
     for prs in ['PRS','dPRS']:
         for pop_id,pop in zip(['train','valid','test','nbw'],[train,valid,test,nbw]):
-            # take a new subset
+            # take a new subset, safely
+            if not df.index.isin(pop).any():
+                continue
             df2=df.loc[pop,:].dropna()
             pop=[ind for ind in pop if ind in df2.index]
             # zscore (d)PRS within the phenotype group; trait too if quantitative
@@ -101,8 +101,10 @@ for phe_code in phe_codes:
                 elif m=='JOINT' and pop_id == 'valid':
                     models[prs][m][pop_id]=models[prs][m]['train']
                 # otherwise just fit and assess within the same group
+                elif is_bin:
+                    models[prs][m][pop_id]=Logit(df2.loc[pop,phe_code], df2.loc[pop,params[prs][m]]).fit(maxiter=200)
                 else:
-                    models[prs][m][pop_id]=regress(df2.loc[pop,phe_code], df2.loc[pop,params[prs][m]]).fit(disp=0)
+                    models[prs][m][pop_id]=OLS(df2.loc[pop,phe_code], df2.loc[pop,params[prs][m]]).fit()
             # compute these stats: # beta/OR of top 2% versus entire group; AUC of joint model (bin); 
             # r of resid model (qt); N; and spearman rho between dPRS and trait (bin & QT)
             # helper for beta2 and subplot (A) below:
@@ -116,7 +118,10 @@ for phe_code in phe_codes:
                 if is_bin:
                     data=np.vstack((expit(models['PRS']['COVAR']['train'].predict(df.loc[iids,covariates])), 
                                     (q0 <= df.loc[iids,prs]) & (df.loc[iids,prs] <= q1))).T
-                    m=Logit(df.loc[iids,phe_code], data).fit(disp=0)
+                    try:
+                        m=Logit(df.loc[iids,phe_code], data).fit(disp=0)
+                    except PerfectSeparationError:
+                        return None,(None,None),None 
                     b=np.exp(m.params[1])
                     ci=np.abs(np.exp(m.conf_int().iloc[1,:].values)-b)
                 else:
@@ -254,6 +259,9 @@ for phe_code in phe_codes:
         
         # now plot them
         o=min(len(outliers),o)
+        if o==0:
+            outliers=df3[df3['mahal']==df3['mahal'].min(),'mahal'].index
+            o=1
         dfo=df2.loc[outliers[-o:],:][::-1]
         top5pc=np.argsort(dfo[prs].dot(dfo[profl_pcs])[:npc])[-5:][::-1]
         pc_plots2=[]
@@ -275,7 +283,7 @@ for phe_code in phe_codes:
         cluster = KMeans(n_clusters=k, n_init=25).fit(df3.loc[outliers,profl_pcs])
         pre_frac = 0.8 - 10.0/len(outliers)
         errors = [cluster.inertia_]
-        if len(outliers) > 5: # don't try to cluster a trivial number of cases
+        if o > 5: # don't try to cluster a trivial number of cases
             for new_k in [2,3,4,5]:
                 new_cluster = KMeans(n_clusters=new_k, n_init=25).fit(df3.loc[outliers,profl_pcs])
                 errors.append(new_cluster.inertia_)
