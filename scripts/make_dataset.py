@@ -20,7 +20,7 @@ def load_p_and_se(dataset):
 
 def make_dataset(dataset, out, p_star=0.01, center=True):
     # keep variants not in LD, MAF > 0.01%, and QC'd; get their alt alleles
-    with open('../reference/variant_qc.prune.in', 'r') as f:
+    with open('../reference/variant_qc_v2.prune.in', 'r') as f:
         var_set = set([line.rstrip() for line in f])
     var_alt = {var:None for var in var_set}
     with open('/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar', 'r') as f:
@@ -64,14 +64,14 @@ if __name__ == "__main__":
     c,p=args.center,float(args.p[0])
     # input/output naming
     path=os.path.join('/oak/stanford/groups/mrivas/projects/degas-risk/',
-                      'datasets/train',
+                      'datasets/train/v2/',
                       '_'.join(('all','z' if args.z else 'beta',
-                                'nonCenter_20190805.full_df.pkl.gz')))
+                                'nonCenter_20200408.full_df.pkl.gz')))
     outP=os.path.join(os.path.dirname(path), 
                       '_'.join(('all','z' if args.z else 'beta',
                                 'center' if c else 'nonCenter',
                                 'p'+str(p).replace('.',''), 
-                                '20190805.full_df.pkl.gz')))
+                                '20200408.full_df.pkl.gz')))
     # everything else goes here
     make_dataset(dataset=path, out=outP, p_star=p, center=c)
 

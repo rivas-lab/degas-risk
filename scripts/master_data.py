@@ -16,11 +16,11 @@ else:
     print("Extracting {} values...".format("z" if z else "beta" if b else "p")) 
 
 # files to import be here
-with open('../reference/summary_stats_train.tsv', 'r') as f:
+with open('../reference/summary_stats_train_v2.tsv', 'r') as f:
 	file_ref = [(line.split()[0],line.rstrip().split()[1:]) for line in f]
 
 # only keep variants not in LD, MAF > 0.01%, and QC'd
-with open('../reference/variant_qc.prune.in', 'r') as f:
+with open('../reference/variant_qc_v2.prune.in', 'r') as f:
 	var_set = set([line.rstrip() for line in f])
 
 # get alt alleles -- need to standardize summary stats ALT allele
@@ -62,5 +62,5 @@ dataset_name = '_'.join(('all',
                          'nonCenter',
                          str(pd.Timestamp.today()).split()[0].replace('-','')))
 
-path='/oak/stanford/groups/mrivas/projects/degas-risk/datasets/train/'
+path='/oak/stanford/groups/mrivas/projects/degas-risk/datasets/train/v2/'
 joblib.dump(data, path + dataset_name + '.full_df.pkl.gz', compress=5)
