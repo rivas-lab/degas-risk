@@ -1,8 +1,9 @@
-#!/bin/python
+#!/bin/python3
 import sys
 import numpy as np
 import pandas as pd
-import sklearn.externals.joblib as joblib
+import joblib
+# import sklearn.externals.joblib as joblib
 
 # ensure usage, pick statistic to keep, ensure usage
 usage="usage: python master_data.py [z OR b OR p OR se]"
@@ -16,7 +17,7 @@ else:
     print("Extracting {} values...".format("z" if z else "beta" if b else "p")) 
 
 # files to import be here
-with open('../reference/summary_stats_train_v2.tsv', 'r') as f:
+with open('../reference/final_sumstats_v3.tsv', 'r') as f:
 	file_ref = [(line.split()[0],line.rstrip().split()[1:]) for line in f]
 
 # only keep variants not in LD, MAF > 0.01%, and QC'd

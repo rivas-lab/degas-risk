@@ -171,13 +171,16 @@ for phe_code in phe_codes:
         for prs in ['PRS','dPRS']:
             df2[prs]=zscore(df2[prs])
         pop=df2.index.tolist()
+        if not is_bin:
+            phe_mean=df2[phe_code].mean()
+            df2[phe_code]=df2[phe_code]-df2[phe_code].mean()
         # (A) do quantile plot with modified (only if binary) phenotype
         qs=[(q+5,q) for q in np.arange(5,100,5)[::-1]] + [(5,2),(2,0)]
         for prs,name in zip(['PRS','dPRS'],['PRS','dPRS']):
             fits=[prs_betaci(q, prs, df2.loc[pop,:]) for q in qs]
             plots[0].errorbar(x=np.arange(len(qs)), y=[p[0] for p in fits], yerr=np.array([p[1] for p in fits]).T,
                                 fmt='o', c='b' if name=='dPRS' else 'grey', alpha=0.4+0.6*(name=='dPRS'))
-            if name=='dPRS' and is_bin:
+            if name=='dPRS':
                 p2=df2.loc[(df2.loc[pop,prs].quantile(0.4) <= df2.loc[pop,prs]) & 
                            (df2.loc[pop,prs] <= df2.loc[pop,prs].quantile(0.6)), phe_code].mean()
                 aax=plots[0].twinx()
@@ -186,7 +189,7 @@ for phe_code in phe_codes:
                     aax.set_yticklabels(['{:.3f}'.format(k*p2/(1-p2+(k*p2))) if k > 0 else '' 
                                                          for k in plots[0].get_yticks()])
                 else:
-                    aax.set_yticklabels(['{:.1f}'.format(k+p2) for k in plots[0].get_yticks()])
+                    aax.set_yticklabels(['{:.1f}'.format(k+phe_mean) for k in plots[0].get_yticks()])
                 aax.set_ylim(plots[0].get_ylim())
         # labels    
         plots[0].set_xlabel('(d)PRS quantile')
@@ -251,10 +254,11 @@ for phe_code in phe_codes:
         plots[2].legend([pc_plots[pc] for pc in top5pc], ['PC'+str(pc+1) for pc in top5pc], loc=1)
     
         # (D): outliers (first find them)
-        centroid=df2[profl_pcs].median()
-        df3=df2.iloc[-int(0.1*len(pop)):]
+        nf=0.05
+        centroid=df2.iloc[-int(nf*len(pop)):,:][profl_pcs].mean()
+        df3=df2.iloc[-int(nf*len(pop)):]
         df3['mahal']=df3[profl_pcs].apply(lambda x: euclidean(x, centroid), axis=1)
-        m_star=df3['mahal'].mean() + 2*df3['mahal'].std()
+        m_star=df3['mahal'].mean() + df3['mahal'].std()
         outliers=df3.query('mahal > @m_star').index
         
         # now plot them
@@ -281,7 +285,7 @@ for phe_code in phe_codes:
         # (E): Cluster centers (first compute them)
         k=1
         cluster = KMeans(n_clusters=k, n_init=25).fit(df3.loc[outliers,profl_pcs])
-        pre_frac = 0.8 - 10.0/len(outliers)
+        pre_frac = 0.75 - 10.0/len(outliers)
         errors = [cluster.inertia_]
         if o > 5: # don't try to cluster a trivial number of cases
             for new_k in [2,3,4,5]:

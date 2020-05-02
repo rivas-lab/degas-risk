@@ -12,7 +12,7 @@ if len(sys.argv) < 3:
 	sys.exit(2)
 cca = False 
 score = True
-center = True
+center = False
 
 # parse
 dataset = sys.argv[1]
@@ -29,15 +29,25 @@ bim_file='/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal
 data = pd.read_pickle(dataset)
 
 # subset to phenotypes in reference list with at least 2 hits at p < p_star
-exclude=pd.read_table("../reference/blacklist.txt").iloc[:,0].tolist()
-phe_ref=pd.read_table("../reference/phenotypes.tsv").iloc[:,0].tolist()
-data = data[[i for i in phe_ref if data[i].count() > 1 and i not in exclude]]
+exclude=pd.read_table("../reference/blacklist.txt", header=None).iloc[:,0].tolist()
+phe_ref=pd.read_csv("../reference/final_sumstats_v3.tsv", 
+                    header=None, sep=" ").iloc[:,0].tolist()
+
+print(data.shape)
+data = data[[i for i in phe_ref if i not in exclude]]
+print(data.shape)
+data = data.dropna(axis=0, how='all').dropna(axis=1, how='all')
+print(data.shape)
+
 # center data
 if center:
     dataset_name = dataset_name.replace('nonCenter','center')
     data = data.subtract(data.mean()).divide(data.std())
 # impute zeros -- for some reason df.fillna() leaves some nulls
 data = pd.DataFrame(np.nan_to_num(data.values), index=data.index, columns=data.columns)
+print(data.shape)
+
+print(np.sum(np.sum(np.asarray_chkfinite(data))))
 
 # this is a helper for CCA
 def mat_sqrt_inv(x):
@@ -47,7 +57,7 @@ def mat_sqrt_inv(x):
     return a.dot(d).dot(a)
 if cca:
     phes = deepcopy(sorted(data.columns))
-    yty  = pd.read_pickle(phe_corr).sort_index().fillna(value=0)
+    yty  = pd.read_pickle(peehe_corr).sort_index().fillna(value=0)
     yty  = yty[phes]
     data = data[phes].dot(mat_sqrt_inv(yty + (0.99 * np.eye(yty.shape[0]))))
     data.columns = phes
@@ -56,7 +66,7 @@ if cca:
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
 
 # CCA isn't sparse because of the matrix multiplication above
-US = matt.fit_transform(data.values if cca else csr_matrix(data.values)) 
+US = matt.fit_transform(np.float64(data.values) if cca else csr_matrix(data.values)) 
 
 # necessary for allele scoring
 with open(bim_file, 'r') as f:
@@ -73,9 +83,10 @@ np.savez(os.path.join(os.path.dirname(dataset), 'cca' if cca else 'tsvd', datase
          label_var = np.array(data.index),
          label_var_minor_allele = np.array(data.index.map(id2alt.get))
 )
+
 # optional -- do allele scoring
 if score:
-    prs_dir='/oak/stanford/groups/mrivas/projects/degas-risk/scorefiles/'
+    prs_dir='/oak/stanford/groups/mrivas/projects/degas-risk/scorefiles/v2/'
     weights=prs_dir+dataset_name+'.prs.weights.txt'
     pd.DataFrame(np.hstack((np.array(data.index).reshape(-1,1),
                             np.array(data.index.map(id2alt.get)).reshape(-1,1),

@@ -3,7 +3,7 @@ import sys
 import os
 import numpy as np
 import pandas as pd
-from sklearn.externals import joblib
+import joblib
 
 _README_="""
 A script to subset pickled dataframes (output from master_dataset.py) for use in DEGAS (tsvd.py).
@@ -35,8 +35,8 @@ def make_dataset(dataset, out, p_star=0.01, center=True):
     df=data[(p < p_star) & (se < 0.2) & ~((se.isin(se[qts])) & (se >= 0.08))]
     if center:
         df=df.subtract(df.mean()).divide(data.std())
-    # sparsify and write to file
-    df.to_sparse().to_pickle(out, compression='gzip')
+    # write to file
+    df.to_pickle(out, compression='gzip')
     return
 
 
@@ -66,12 +66,12 @@ if __name__ == "__main__":
     path=os.path.join('/oak/stanford/groups/mrivas/projects/degas-risk/',
                       'datasets/train/v2/',
                       '_'.join(('all','z' if args.z else 'beta',
-                                'nonCenter_20200408.full_df.pkl.gz')))
+                                'nonCenter_20200427.full_df.pkl.gz')))
     outP=os.path.join(os.path.dirname(path), 
                       '_'.join(('all','z' if args.z else 'beta',
                                 'center' if c else 'nonCenter',
                                 'p'+str(p).replace('.',''), 
-                                '20200408.full_df.pkl.gz')))
+                                '20200427.full_df.pkl.gz')))
     # everything else goes here
     make_dataset(dataset=path, out=outP, p_star=p, center=c)
 

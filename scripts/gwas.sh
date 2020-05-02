@@ -1,22 +1,23 @@
 #!/bin/bash
 #SBATCH -J DEGWAS
 #SBATCH -p owners,mrivas,normal
-#SBATCH --mem=25600
-#SBATCH --cores=4
-#SBATCH -t 1-00:00:00
-#SBATCH -o old_logs/degas_train_gwas_chrsplit.%A_%a.out
+#SBATCH --mem=51200
+#SBATCH --cores=8
+#SBATCH -t 2-00:00:00
+#SBATCH -o logs/degas_train_gwas_v2_last.%A_%a.out
 
 # ensure usage
 if [ $# != 1 ]; then
     if [ -z $SLURM_ARRAY_TASK_ID ]; then
         echo "usage: $0 GBE_ID"; exit 1
     else 
-        phe=$(awk '{for (i=0; i<22; i++){print}}' rerun_train_gwas_20190728.tsv | awk -v nr=$SLURM_ARRAY_TASK_ID '(NR==nr){print $1}')
-        chr=$(expr $(expr $SLURM_ARRAY_TASK_ID % 22) + 1)
+        # phe=$(awk '{for (i=0; i<22; i++){print}}' rerun_train_gwas_20190728.tsv | awk -v nr=$SLURM_ARRAY_TASK_ID '(NR==nr){print $1}')
+        # chr=$(expr $(expr $SLURM_ARRAY_TASK_ID % 22) + 1)
+	phe=$(awk -v nr=$SLURM_ARRAY_TASK_ID 'NR==nr' ../reference/final_rerun_v2.txt )
     fi
 else
     phe=$1
-    chr=22
+    chr="1-22"
 fi
 
 # load an appropriate plink version
@@ -30,39 +31,47 @@ fi
 # directories and output file prefix, for convenience
 ukbb_dir="/oak/stanford/groups/mrivas/private_data/ukbb/24983"
 proj_dir="/oak/stanford/groups/mrivas/projects/degas-risk"
-out_prefix="${proj_dir}/summary-stats/train/chrsplit/ukb24983_v2.degas-val.chr${chr}"
+out_prefix="${proj_dir}/summary-stats/train/v2/ukb24983_v2.degas-val" # chr${chr}"
+phe_file=$(find /oak/stanford/groups/mrivas/ukbb24983/phenotypedata/current/phe/ /oak/stanford/groups/mrivas/ukbb24983/phenotypedata/extras/highconfidenceqc/current/phe/ /oak/stanford/groups/mrivas/ukbb24983/phenotypedata/extras/cancer/current/phe/ -name "${phe}.phe")
+
 
 # loop over variants on one/both arrays
 for kind in "one_array" "both_array"; do 
-    # what to do with the variants on one array
+    # which variants to exclude (as oppose to extract)
     if [ $kind == "one_array" ]; then 
-        mode="--extract";
+        exclude="${ukbb_dir}/sqc/both_array_variants.txt"
+        array=""
     else 
-        mode="--exclude";
+        exclude="${ukbb_dir}/sqc/one_array_variants.txt"
+        array="Array"
     fi
     # run GWAS
     plink2 --bpfile "${ukbb_dir}/array_combined/pgen/ukb24983_cal_hla_cnv" \
-           --chr ${chr} \
+           --chr 1-22 \
            --covar "${ukbb_dir}/sqc/ukb24983_GWAS_covar.phe" \
-           --covar-name age sex Array PC1-PC4 \
+           --covar-name age sex $array PC1-PC4 \
            --covar-variance-standardize \
-           $mode "${ukbb_dir}/sqc/one_array_variants.txt" \
-           --glm firth-fallback hide-covar omit-ref \
+           --exclude $exclude \
+           --extract "../reference/variant_qc_v2.prune.in" \
            --keep "${proj_dir}/population-split/ukb24983_white_british_train.phe" \
-           --memory 25000 \
-           --out "${out_prefix}.${kind}.${phe}" \
-           --pheno "${ukbb_dir}/phenotypedata/master_phe/master.phe" \
-           --pheno-name $phe \
-           --pheno-quantile-normalize \
-           --threads 4
+           --remove "${ukbb_dir}/sqc/w24983_20200204.phe" \
+           --memory 48000 \
+           --pheno ${phe_file} --pheno-quantile-normalize \
+           --glm firth-fallback hide-covar omit-ref \
+           --threads 8 \
+           --out "${out_prefix}.${kind}.${phe}" 
 done
+#           --pheno "${ukbb_dir}/phenotypedata/extras/highconfidenceqc/current/phe/${phe}.phe" \
+#           --pheno "${ukbb_dir}/phenotypedata/master_phe/master.phe" --pheno-name $phe \
+#           --pheno "${ukbb_dir}/phenotypedata/extras/cancer/current/phe/${phe}.phe" \
 
 # combine summary stats
-for suffix in "${phe}.glm.linear" "${phe}.glm.logistic.hybrid"; do
-    if [ -f "${out_prefix}.both_array.${phe}.${suffix}" ]; then
+phe2="PHENO1"
+for suffix in "glm.linear" "glm.logistic.hybrid"; do
+    if [ -f "${out_prefix}.both_array.${phe}.${phe2}.${suffix}" ]; then
         for kind in "both_array" "one_array"; do
-            cat "${out_prefix}.${kind}.${phe}.${suffix}"
-        done | sort -k1,1n -k2,2n -u > "${out_prefix}.${suffix}"
+            cat "${out_prefix}.${kind}.${phe}.${phe2}.${suffix}"
+        done | sort -k1,1n -k2,2n -u > "${out_prefix}.${phe}.${suffix}"
     fi
 done
 

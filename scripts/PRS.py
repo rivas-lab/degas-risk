@@ -34,7 +34,7 @@ def PRS(dataset, pheno):
 
     # extract coefficients
     weight_file = os.path.join(out_dir, pheno+'_weights.txt')
-    coefs[['ALT',pheno]].dropna().to_dense().to_csv(weight_file, sep='\t', header=None)
+    coefs[['ALT',pheno]].dropna().to_csv(weight_file, sep='\t', header=None)
 
     # score alleles with plink
     m_phe="/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/master_phe/master.phe"

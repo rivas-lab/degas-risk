@@ -14,7 +14,7 @@ else:
     # process
     npz_f, pc_f = sys.argv[1:3]
     # load zipped output from tsvd
-    npz=np.load(npz_f)
+    npz=np.load(npz_f, allow_pickle=True)
     # excludes NMISS_ALLELE_CT and DENOM
     pcs=pd.read_table(pc_f, index_col='#IID')
     # if no phenotypes are provided, use everything in the reference
@@ -39,8 +39,8 @@ train=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
 test=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
                     'population-split/ukb24983_white_british_valid.phe',
                     usecols=[0]).values.flatten().tolist()
-phenos=pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/'+
-                     'master_phe/master.phe', 
+phenos=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
+                      'master.20200420.phe',
                      usecols=['IID','age','sex','PC1','PC2','PC3','PC4']+phe,
                      index_col='IID', na_values=-9)
 # remove duplicate IID; adjust binary traits from 2/1 to 1/0
