@@ -34,7 +34,7 @@ phe_ref=pd.read_csv("../reference/final_sumstats_v3.tsv",
                     header=None, sep=" ").iloc[:,0].tolist()
 
 print(data.shape)
-data = data[[i for i in phe_ref if i not in exclude]]
+data = data[[i for i in phe_ref if i not in exclude and i in data.columns]]
 print(data.shape)
 data = data.dropna(axis=0, how='all').dropna(axis=1, how='all')
 print(data.shape)
