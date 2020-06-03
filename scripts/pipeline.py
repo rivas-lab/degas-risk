@@ -18,17 +18,18 @@ from sklearn.metrics import roc_curve,roc_auc_score
 from sklearn.preprocessing import normalize
 from sklearn.cluster import KMeans
 from PRS import PRS # custom script to run PRS with DeGAs input data
+from gap_statistic import OptimalK
 import sys
 
 ### 1. load data
-dataset='/oak/stanford/groups/mrivas/projects/degas-risk/datasets/train/tsvd/all_z_center_p001_20190805_500PCs.npz'
-npc=300
+dataset='/oak/stanford/groups/mrivas/projects/degas-risk/datasets/train/v2/tsvd/all_beta_center_p1e-06_20200506_500PCs.npz'
+npc=500
 phe_codes=sys.argv[1:]
 covariates=['age','sex']+['PC'+str(i+1) for i in range(4)]+['1']
 score_pcs=['SCORE{}_SUM'.format(pc+1) for pc in range(npc)]
 profl_pcs=['PROF_PC{}'.format(pc+1) for pc in range(npc)]
-z=np.load(dataset)
-scores=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/scorefiles/'+
+z=np.load(dataset, allow_pickle=True)
+scores=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/scorefiles/v2/'+
                       os.path.splitext(os.path.basename(dataset))[0]+'.sscore',
                      index_col='#IID')
 phenos=pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/master_phe/master.phe',
@@ -53,7 +54,7 @@ nbw=set(pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/sqc/population_stra
 # 3. analysis
 for phe_code in phe_codes:
     # run PRS for this trait if not already done
-    prs_f=os.path.join('/oak/stanford/groups/mrivas/projects/degas-risk/PRS/train/',
+    prs_f=os.path.join('/oak/stanford/groups/mrivas/projects/degas-risk/PRS/train/v2/',
                        os.path.splitext(os.path.basename(dataset))[0][:-7], 
                        phe_code+'_PRS.profile')
     if not os.path.exists(prs_f):
@@ -83,8 +84,8 @@ for phe_code in phe_codes:
             # take a new subset, safely
             if not df.index.isin(pop).any():
                 continue
+            pop=[ind for ind in pop if ind in df.index and not np.isnan(ind)]
             df2=df.loc[pop,:].dropna()
-            pop=[ind for ind in pop if ind in df2.index]
             # zscore (d)PRS within the phenotype group; trait too if quantitative
             df2[prs]=zscore(df2[prs])
             if not is_bin:
@@ -108,7 +109,8 @@ for phe_code in phe_codes:
             # compute these stats: # beta/OR of top 2% versus entire group; AUC of joint model (bin); 
             # r of resid model (qt); N; and spearman rho between dPRS and trait (bin & QT)
             # helper for beta2 and subplot (A) below:
-            def prs_betaci((q0,q1), prs, df):
+            def prs_betaci(q, prs, df):
+                (q0,q1)=q
                 we_print=(q0==2)
                 q0=df[prs].quantile((100-q0)/100.0),  # pandas has 99 as the highest; we have 1 as the highest
                 q1=df[prs].quantile((100-q1)/100.0)
@@ -131,7 +133,7 @@ for phe_code in phe_codes:
                     b=m.params[1]
                     ci=np.abs(m.conf_int().iloc[1,:].values-b)
                 if we_print:
-                    print(b, ci)
+                    print(b, [b-ci[0],b+ci[1]])
                 return b,ci,df.loc[(q0 <= df[prs]) & (df[prs] <= q1),phe_code].mean()
             if is_bin:
                 stats[prs].loc[pop_id,'beta2']=prs_betaci((2,0), prs, df2.loc[pop,:])[0]
@@ -145,7 +147,7 @@ for phe_code in phe_codes:
                 stats[prs].loc[pop_id,'pearsonr']=pearsonr(models[prs]['COVAR'][pop_id].resid, df2.loc[pop,prs])[0]
                 stats[prs].loc[pop_id,'n']=df2.loc[pop,phe_code].shape[0]
             stats[prs].loc[pop_id,'spearmanr']=spearmanr(df2.loc[pop,phe_code],df2.loc[pop,prs])[0]
-        stats[prs].to_csv('/oak/stanford/groups/mrivas/projects/degas-risk/final_results/'+prs.lower()+'/'+phe_code+'_'+prs.lower()+'.tsv', sep='\t')
+        stats[prs].to_csv('/oak/stanford/groups/mrivas/projects/degas-risk/final_results/v2/'+prs.lower()+'/'+phe_code+'_'+prs.lower()+'.tsv', sep='\t')
    
     # (4) do the plot thing: first initialize plot objects
     width = 2
@@ -234,7 +236,7 @@ for phe_code in phe_codes:
         # (C): high risk individuals (first compute profiles)
         df2.sort_values(by='dPRS', inplace=True, ascending=True)
         for pc in range(npc):
-            df2[profl_pcs[pc]]=(df2[score_pcs[pc]] * weights[pc] * df2[prs]).clip_lower(0)
+            df2[profl_pcs[pc]]=(df2[score_pcs[pc]] * weights[pc] * df2[prs]).clip(lower=0)
         df2[profl_pcs] = normalize(df2[profl_pcs], norm='l1')
         # now plot
         o, pc_plots=50, []
@@ -258,7 +260,7 @@ for phe_code in phe_codes:
         centroid=df2.iloc[-int(nf*len(pop)):,:][profl_pcs].mean()
         df3=df2.iloc[-int(nf*len(pop)):]
         df3['mahal']=df3[profl_pcs].apply(lambda x: euclidean(x, centroid), axis=1)
-        m_star=df3['mahal'].mean() + df3['mahal'].std()
+        m_star=df3['mahal'].mean() + 2*df3['mahal'].std()
         outliers=df3.query('mahal > @m_star').index
         
         # now plot them
@@ -283,16 +285,10 @@ for phe_code in phe_codes:
         plots[3].legend([pc_plots[pc] for pc in top5pc], ['PC'+str(i+1) for i in top5pc], loc=1)    
         
         # (E): Cluster centers (first compute them)
-        k=1
+        ok=OptimalK(parallel_backend='multiprocessing')
+        k2=ok(df3.loc[outliers,profl_pcs], cluster_array=np.arange(1, 20))
+        k=np.argmax(ok.gap_df['gap*'])+1 # pick based on gap-star statistic
         cluster = KMeans(n_clusters=k, n_init=25).fit(df3.loc[outliers,profl_pcs])
-        pre_frac = 0.75 - 10.0/len(outliers)
-        errors = [cluster.inertia_]
-        if o > 5: # don't try to cluster a trivial number of cases
-            for new_k in [2,3,4,5]:
-                new_cluster = KMeans(n_clusters=new_k, n_init=25).fit(df3.loc[outliers,profl_pcs])
-                errors.append(new_cluster.inertia_)
-                if new_cluster.inertia_ / cluster.inertia_ < pre_frac**(new_k - k): 
-                    cluster,k = new_cluster,new_k
         
         # now plot them
         ms = cluster.cluster_centers_[0:k]
@@ -355,5 +351,5 @@ for phe_code in phe_codes:
         # at the end: display lexicographic labels
         # for i in range(6):
         #     plots[i].text(-0.1, 1.05, chr(i+65), fontsize=16, transform=plots[i].transAxes)
-        fig.savefig("/oak/stanford/groups/mrivas/projects/degas-risk/final_results/plots/"+phe_code+"_"+pop_id+".png", bbox_inches='tight')
+        fig.savefig("/oak/stanford/groups/mrivas/projects/degas-risk/final_results/v2/plots/"+phe_code+"_"+pop_id+".png", bbox_inches='tight')
     
