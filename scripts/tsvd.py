@@ -11,7 +11,7 @@ if len(sys.argv) < 3:
 	print("usage: python tsvd.py /path/to/dataset.pkl.gz n_pcs")
 	sys.exit(2)
 score = True
-center = False
+center = True
 
 # parse
 dataset = sys.argv[1]
