@@ -10,7 +10,6 @@ from copy import deepcopy
 if len(sys.argv) < 3:
 	print("usage: python tsvd.py /path/to/dataset.pkl.gz n_pcs")
 	sys.exit(2)
-cca = False 
 score = True
 center = False
 
@@ -19,7 +18,6 @@ dataset = sys.argv[1]
 n = int(sys.argv[2])
 dataset_info = os.path.basename(dataset).split('.')[0].split('_')
 dataset_name = '_'.join([datum for datum in dataset_info] + [str(n)+'PCs'])
-dataset_name += '_cca' if cca else ''
 
 # these are useful
 phe_corr='/oak/stanford/groups/mrivas/projects/degas-risk/covars/all_white_british_phe_corr.pkl.gz'
@@ -49,18 +47,6 @@ print(data.shape)
 
 print(np.sum(np.sum(np.asarray_chkfinite(data))))
 
-# this is a helper for CCA
-def mat_sqrt_inv(x):
-    # x = a.diag(d).aT
-    d,a = np.linalg.eig(x)
-    d = np.diag(map(lambda i:i**(-1/2) if i > 0 else 0, d))
-    return a.dot(d).dot(a)
-if cca:
-    phes = deepcopy(sorted(data.columns))
-    yty  = pd.read_pickle(peehe_corr).sort_index().fillna(value=0)
-    yty  = yty[phes]
-    data = data[phes].dot(mat_sqrt_inv(yty + (0.99 * np.eye(yty.shape[0]))))
-    data.columns = phes
 
 # do TSVD with these parameters
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
