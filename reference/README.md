@@ -4,7 +4,7 @@ This folder contains files used for reference in the project — specifically, v
 
 ### Files
 
-- Variants included: `variant_qc.txt`
+- Variants included: `variant_qc_v2.prune.in`
 - Traits included: `final_sumstats_v3.txt`
 - Traits excluded: `blacklist.txt`
 - Traits in final DeGAs instance: `final_phe_codes_v2.txt`
