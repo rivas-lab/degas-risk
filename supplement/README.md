@@ -27,4 +27,4 @@ Additional information on these measures, including covariate adjustment, can be
 
 ### Supplementary Results
 
-We also computed DeGAs on an additional, publicly available [dataset](http://www.nealelab.is/blog/2017/7/19/rapid-gwas-of-thousands-of-phenotypes-for-337000-samples-in-the-uk-biobank). Please refer to the documentation in the `extra` folder for more details.
+We also computed DeGAs on an additional publicly available [dataset](http://www.nealelab.is/blog/2017/7/19/rapid-gwas-of-thousands-of-phenotypes-for-337000-samples-in-the-uk-biobank) of summary statistics from UK Biobank GWAS. Please refer to the documentation in the `extra` folder for more details.
