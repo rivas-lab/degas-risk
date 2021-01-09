@@ -19,10 +19,6 @@ n = int(sys.argv[2])
 dataset_info = os.path.basename(dataset).split('.')[0].split('_')
 dataset_name = '_'.join([datum for datum in dataset_info] + [str(n)+'PCs'])
 
-# these are useful
-phe_corr='/oak/stanford/groups/mrivas/projects/degas-risk/covars/all_white_british_phe_corr.pkl.gz'
-bim_file='/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar'
-
 # load, do analysis
 data = pd.read_pickle(dataset)
 
@@ -50,16 +46,15 @@ print(np.sum(np.sum(np.asarray_chkfinite(data))))
 
 # do TSVD with these parameters
 matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
-
-# CCA isn't sparse because of the matrix multiplication above
-US = matt.fit_transform(np.float64(data.values) if cca else csr_matrix(data.values)) 
+US = matt.fit_transform(csr_matrix(data.values)) 
 
 # necessary for allele scoring
+bim_file='/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar'
 with open(bim_file, 'r') as f:
     id2alt = {line.split()[2]:line.rstrip().split()[-1] for line in f}
 
 # save the results
-np.savez(os.path.join(os.path.dirname(dataset), 'cca' if cca else 'tsvd', dataset_name),
+np.savez(os.path.join(os.path.dirname(dataset), 'tsvd', dataset_name),
          U = US/matt.singular_values_,
          V = matt.components_.T,
          D = matt.singular_values_,
