@@ -12,9 +12,11 @@ import random
 npc=500
 
 # dataset and variant:gene info
-z=np.load('/oak/stanford/groups/mrivas/projects/degas-risk/datasets/train/v2/tsvd/all_beta_center_p1e-06_20200506_500PCs.npz', allow_pickle=True)
+proj_dir=''
+ukbb_dir='' # not that one
+z=np.load(proj_dir+'datasets/train/v2/tsvd/all_beta_center_p1e-06_20200506_500PCs.npz', allow_pickle=True)
 var2gene={}
-with gzip.open('/oak/stanford/groups/mrivas/private_data/ukbb/variant_filtering/variant_filter_table.new.tsv.gz', 'r') as f:
+with gzip.open(ukbb_dir+'variant_filtering/variant_filter_table.new.tsv.gz', 'r') as f:
     for line in f:
         arr=line.decode().rstrip().split('\t')
         if len(arr) > 30:
