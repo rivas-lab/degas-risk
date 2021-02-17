@@ -14,8 +14,8 @@ name=$(basename $npz )
 
 # plink spec
 ml load plink
-bfile=$OAK/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv
-outD=$OAK/projects/degas-risk/scorefiles/
+bfile="" # redacted: ukb24983_cal_hla_cnv
+outD="" # redacted scorefiles dir
 mkdir -p ${outD}/temp_score
 
 # mode 1: score the specified PC

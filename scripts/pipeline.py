@@ -22,39 +22,41 @@ from gap_statistic import OptimalK
 import sys
 
 ### 1. load data
-dataset='/oak/stanford/groups/mrivas/projects/degas-risk/datasets/train/v2/tsvd/all_beta_center_p1e-06_20200506_500PCs.npz'
+proj_dir=None # redacted
+ukb_root=None 
+dataset=proj_dir+'datasets/train/v2/tsvd/all_beta_center_p1e-06_20200506_500PCs.npz'
 npc=500
 phe_codes=sys.argv[1:]
 covariates=['age','sex']+['PC'+str(i+1) for i in range(4)]+['1']
 score_pcs=['SCORE{}_SUM'.format(pc+1) for pc in range(npc)]
 profl_pcs=['PROF_PC{}'.format(pc+1) for pc in range(npc)]
 z=np.load(dataset, allow_pickle=True)
-scores=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/scorefiles/v2/'+
+scores=pd.read_table(proj_dir+'scorefiles/v2/'+
                       os.path.splitext(os.path.basename(dataset))[0]+'.sscore',
                      index_col='#IID')
-phenos=pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/master_phe/master.phe',
+phenos=pd.read_table(ukb_root+'phenotypedata/master_phe/master.phe',
                      usecols=['IID']+phe_codes+covariates[:-1],
                      index_col='IID',
                      na_values=-9)
 phenos['1']=1
-with open('/oak/stanford/groups/mrivas/users/magu/repos/rivas-lab/ukbb-tools/05_gbe/icdinfo.txt','r') as f:
+with open('../../ukbb-tools/05_gbe/icdinfo.txt','r') as f:
     code_to_name = {line.split()[0]:line.split()[2].replace('_',' ').capitalize() for line in f}
 
 
 # 2. define population groupings
-train=set(pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/population-split/'+
+train=set(pd.read_table(proj_dir+'population-split/'+
                          'ukb24983_white_british_train.phe').iloc[:,0].astype(float).tolist())
-valid=set(pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/population-split/'+
+valid=set(pd.read_table(proj_dir+'population-split/'+
                          'ukb24983_white_british_valid.phe').iloc[:,0].astype(float).tolist())
-test=set(pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/population-split/'+
+test=set(pd.read_table(proj_dir+'population-split/'+
                          'ukb24983_white_british_test.phe').iloc[:,0].astype(float).tolist())
-nbw=set(pd.read_table('/oak/stanford/groups/mrivas/ukbb24983/sqc/population_stratification/'+
+nbw=set(pd.read_table(ukb_root+'sqc/population_stratification/'+
                          'ukb24983_non_british_white.phe').iloc[:,0].astype(float).tolist())
 
 # 3. analysis
 for phe_code in phe_codes:
     # run PRS for this trait if not already done
-    prs_f=os.path.join('/oak/stanford/groups/mrivas/projects/degas-risk/PRS/train/v2/',
+    prs_f=os.path.join(proj_dir+'PRS/train/v2/',
                        os.path.splitext(os.path.basename(dataset))[0][:-7], 
                        phe_code+'_PRS.profile')
     if not os.path.exists(prs_f):
@@ -147,7 +149,7 @@ for phe_code in phe_codes:
                 stats[prs].loc[pop_id,'pearsonr']=pearsonr(models[prs]['COVAR'][pop_id].resid, df2.loc[pop,prs])[0]
                 stats[prs].loc[pop_id,'n']=df2.loc[pop,phe_code].shape[0]
             stats[prs].loc[pop_id,'spearmanr']=spearmanr(df2.loc[pop,phe_code],df2.loc[pop,prs])[0]
-        stats[prs].to_csv('/oak/stanford/groups/mrivas/projects/degas-risk/final_results/v2/'+prs.lower()+'/'+phe_code+'_'+prs.lower()+'.tsv', sep='\t')
+        stats[prs].to_csv(proj_dir+'final_results/v2/'+prs.lower()+'/'+phe_code+'_'+prs.lower()+'.tsv', sep='\t')
    
     # (4) do the plot thing: first initialize plot objects
     width = 2
@@ -351,5 +353,5 @@ for phe_code in phe_codes:
         # at the end: display lexicographic labels
         # for i in range(6):
         #     plots[i].text(-0.1, 1.05, chr(i+65), fontsize=16, transform=plots[i].transAxes)
-        fig.savefig("/oak/stanford/groups/mrivas/projects/degas-risk/final_results/v2/plots/"+phe_code+"_"+pop_id+".png", bbox_inches='tight')
+        fig.savefig(proj_dir+"final_results/v2/plots/"+phe_code+"_"+pop_id+".png", bbox_inches='tight')
     

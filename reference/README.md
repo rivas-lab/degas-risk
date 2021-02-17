@@ -9,6 +9,6 @@ This folder contains files used for reference in the project — specifically, v
 - Traits excluded: `blacklist.txt`
 - Traits in final DeGAs instance: `final_phe_codes_v2.txt`
 
-The above files for traits often reference traits by their Global Biobank Engine IDs, which are not always human readable. For example, `HC382` corresponds to [Asthma](https://biobankengine.stanford.edu/RIVAS_HG19/coding/HC382), which was defined using both hospital records and verbal questionnaire data as part of a [digital phenotyping project](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7212271/). A map between GBE IDs and names can be downloaded [here](https://biobankengine.stanford.edu/downloads/).
+The above files for traits often reference traits by their Global Biobank Engine IDs, which are not always human readable. For example, `HC382` corresponds to [Asthma](https://biobankengine.stanford.edu/RIVAS_HG19/coding/HC382), which was defined using both hospital records and verbal questionnaire data as part of a [digital phenotyping project](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7212271/). The inclusion list also includes columns for phenotype name (string, column 2) and phenotype N (int, column 2, pooled across train, dev, and test sets in the UK Biobank white British cohort).
 
 NB: Due to phenotype inclusion criteria, not all analysis traits present in `final_sumstats_v3.txt` were present in the final DeGAs instance (`final_phe_codes_v2.txt`), due to lack of genetic associations at `p<1e-6` and to manual curation. 

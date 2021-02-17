@@ -5,6 +5,9 @@ import pandas as pd
 import joblib
 # import sklearn.externals.joblib as joblib
 
+global proj_dir=None # redacted
+global ukb_root=None
+
 # ensure usage, pick statistic to keep, ensure usage
 usage="usage: python master_data.py [z OR b OR p OR se]"
 if len(sys.argv) < 2:
@@ -25,8 +28,7 @@ with open('../reference/variant_qc_v2.prune.in', 'r') as f:
 	var_set = set([line.rstrip() for line in f])
 
 # get alt alleles -- need to standardize summary stats ALT allele
-ref_bim = '/'.join(('/oak/stanford/groups/mrivas/ukbb24983',
-                    'array_combined/pgen/ukb24983_cal_hla_cnv.pvar'))
+ref_bim = '/'.join((ukb_root, 'array_combined/pgen/ukb24983_cal_hla_cnv.pvar'))
 var_alt = {var:None for var in var_set}
 with open(ref_bim, 'r') as f:
 	for line in f:
@@ -63,5 +65,5 @@ dataset_name = '_'.join(('all',
                          'nonCenter',
                          str(pd.Timestamp.today()).split()[0].replace('-','')))
 
-path='/oak/stanford/groups/mrivas/projects/degas-risk/datasets/train/v2/'
+path=proj_dir+'datasets/train/v2/'
 joblib.dump(data, path + dataset_name + '.full_df.pkl.gz', compress=5)

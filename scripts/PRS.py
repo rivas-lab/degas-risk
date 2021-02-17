@@ -13,6 +13,8 @@ contains variants which are in LE with one another (pruned).
 Author: Matthew Aguirre (SUNET: magu)
 """
 
+ukb_data_root=None # redacted
+
 # function used in pipeline
 def PRS(dataset, pheno):
     # work here
@@ -27,7 +29,7 @@ def PRS(dataset, pheno):
             raise
 
     # load data
-    bfile="/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv"
+    bfile=ukb_data_root+"array_combined/pgen/ukb24983_cal_hla_cnv"
     bim = pd.read_table(bfile+'.pvar', index_col='ID')
     coefs = pd.read_pickle(dataset)
     coefs = coefs.join(bim['ALT'])
@@ -37,7 +39,7 @@ def PRS(dataset, pheno):
     coefs[['ALT',pheno]].dropna().to_csv(weight_file, sep='\t', header=None)
 
     # score alleles with plink
-    m_phe="/oak/stanford/groups/mrivas/ukbb24983/phenotypedata/master_phe/master.phe"
+    m_phe=ukb_data_root+"phenotypedata/master_phe/master.phe"
     os.system("ml load biology; ml load plink")
     os.system(" ".join(["plink", "--bfile", bfile,
                                  "--score", weight_file, "sum center double-dosage",

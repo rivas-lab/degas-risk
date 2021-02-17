@@ -11,8 +11,8 @@ ml load biology; ml load plink2
 which plink2
 
 # shortnames
-ukb="/oak/stanford/groups/mrivas/ukbb24983"
-repo="/oak/stanford/groups/mrivas/users/magu/repos/rivas-lab/degas-risk"
+ukb=""
+repo=""
 
 
 # check if we're in a batch (array) job

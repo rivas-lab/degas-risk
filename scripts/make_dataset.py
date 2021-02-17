@@ -12,6 +12,9 @@ A script to subset pickled dataframes (output from master_dataset.py) for use in
 Author: Matthew Aguirre (SUNET: magu)
 """
 
+global data_root=None # redacted
+global proj_dir=None
+
 def load_p_and_se(dataset):
     rename=lambda s,k:s.replace('_z_','_'+k+'_').replace('_beta_','_'+k+'_')
     pf,sef=rename(dataset,'p'),rename(dataset,'se')
@@ -23,7 +26,7 @@ def make_dataset(dataset, out, p_star=0.01, center=True):
     with open('../reference/variant_qc_v2.prune.in', 'r') as f:
         var_set = set([line.rstrip() for line in f])
     var_alt = {var:None for var in var_set}
-    with open('/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar', 'r') as f:
+    with open(data_root+'array_combined/pgen/ukb24983_cal_hla_cnv.pvar', 'r') as f:
         for line in f:
             chrom,pos,var,ref,alt = line.rstrip().split()
             var_alt[var] = alt    
@@ -63,8 +66,7 @@ if __name__ == "__main__":
     args=parser.parse_args()
     c,p=args.center,float(args.p[0])
     # input/output naming
-    path=os.path.join('/oak/stanford/groups/mrivas/projects/degas-risk/',
-                      'datasets/train/v2/',
+    path=os.path.join(proj_dir+'datasets/train/v2/',
                       '_'.join(('all','z' if args.z else 'beta',
                                 'nonCenter_20200427.full_df.pkl.gz')))
     outP=os.path.join(os.path.dirname(path), 

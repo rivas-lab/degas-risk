@@ -7,7 +7,7 @@ from copy import deepcopy
 
 
 # shorten paths
-projects='/oak/stanford/groups/mrivas/projects/degas-risk/'
+projects=""
 
 # load input genetic data
 df=pd.read_pickle('neale_beta_p1e-6.ld-indep.manual_combine.sumstats.pkl.gz')

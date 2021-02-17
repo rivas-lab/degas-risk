@@ -49,7 +49,8 @@ matt = TruncatedSVD(n_components=n, n_iter=20, random_state=24983)
 US = matt.fit_transform(csr_matrix(data.values)) 
 
 # necessary for allele scoring
-bim_file='/oak/stanford/groups/mrivas/ukbb24983/array_combined/pgen/ukb24983_cal_hla_cnv.pvar'
+ukb_root="" # redacted
+bim_file=ukb_root+'array_combined/pgen/ukb24983_cal_hla_cnv.pvar'
 with open(bim_file, 'r') as f:
     id2alt = {line.split()[2]:line.rstrip().split()[-1] for line in f}
 
@@ -67,7 +68,8 @@ np.savez(os.path.join(os.path.dirname(dataset), 'tsvd', dataset_name),
 
 # optional -- do allele scoring
 if score:
-    prs_dir='/oak/stanford/groups/mrivas/projects/degas-risk/scorefiles/v2/'
+    proj_dir='' # redacted
+    prs_dir=proj_dir+'scorefiles/v2/'
     weights=prs_dir+dataset_name+'.prs.weights.txt'
     pd.DataFrame(np.hstack((np.array(data.index).reshape(-1,1),
                             np.array(data.index.map(id2alt.get)).reshape(-1,1),

@@ -32,15 +32,13 @@ else:
         phe=list(npz['label_phe_code']) 
 
 # load data: train and test populations and phenotype values
-train=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
-                    'population-split/ukb24983_white_british_train.phe',
+proj_dir=""
+train=pd.read_table(proj_dir+'population-split/ukb24983_white_british_train.phe',
                     usecols=[0]).values.flatten().tolist()
 # evaluation is in a test set (valid.phe) of 10% of WBR
-test=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
-                    'population-split/ukb24983_white_british_valid.phe',
+test=pd.read_table(proj_dir+population-split/ukb24983_white_british_valid.phe',
                     usecols=[0]).values.flatten().tolist()
-phenos=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/'+
-                      'master.20200420.phe',
+phenos=pd.read_table(proj_dir+'master.20200420.phe',
                      usecols=['IID','age','sex','PC1','PC2','PC3','PC4']+phe,
                      index_col='IID', na_values=-9)
 # remove duplicate IID; adjust binary traits from 2/1 to 1/0

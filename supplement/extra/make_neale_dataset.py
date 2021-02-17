@@ -3,11 +3,12 @@ import glob
 import numpy as np
 import pandas as pd
 
-oak='/oak/stanford/groups/mrivas/'
+collab_dir=""
+proj_dir=""
 
-sumstats=glob.glob(oak+'ukbb/broad_collaboration/associations/*.gz')
-variants=pd.read_table('/oak/stanford/groups/mrivas/projects/degas-risk/neale/ld/neale_ld_indep.dual_id.prune.in', header=None).iloc[:,1]
-filemaps=pd.read_table(oak+'ukbb/broad_collaboration/scripts/rename/ukb1189_1859_phenosummary_final.HC.lookup.tsv')
+sumstats=glob.glob(collab_dir+'associations/*.gz')
+variants=pd.read_table(proj_dir+'neale/ld/neale_ld_indep.dual_id.prune.in', header=None).iloc[:,1]
+filemaps=pd.read_table(collab_dir+'scripts/rename/ukb1189_1859_phenosummary_final.HC.lookup.tsv')
 filemaps.iloc[:,1]=filemaps.iloc[:,1].astype(str)
 print(filemaps.iloc[:,1].head())
 

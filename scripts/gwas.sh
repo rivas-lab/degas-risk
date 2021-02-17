@@ -28,11 +28,12 @@ else
    ml load plink2/20190402-non-AVX2
 fi
 
-# directories and output file prefix, for convenience
-ukbb_dir="/oak/stanford/groups/mrivas/private_data/ukbb/24983"
-proj_dir="/oak/stanford/groups/mrivas/projects/degas-risk"
-out_prefix="${proj_dir}/summary-stats/train/v2/ukb24983_v2.degas-val" # chr${chr}"
-phe_file=$(find /oak/stanford/groups/mrivas/ukbb24983/phenotypedata/current/phe/ /oak/stanford/groups/mrivas/ukbb24983/phenotypedata/extras/highconfidenceqc/current/phe/ /oak/stanford/groups/mrivas/ukbb24983/phenotypedata/extras/cancer/current/phe/ -name "${phe}.phe")
+# directories and output file prefix, for convenience -- redacted
+ukbb_dir=""
+proj_dir=""
+out_prefix="" 
+phe_dirs="" 
+phe_file=$(find ${phe_dirs} -name "${phe}.phe")
 
 
 # loop over variants on one/both arrays
@@ -61,9 +62,6 @@ for kind in "one_array" "both_array"; do
            --threads 8 \
            --out "${out_prefix}.${kind}.${phe}" 
 done
-#           --pheno "${ukbb_dir}/phenotypedata/extras/highconfidenceqc/current/phe/${phe}.phe" \
-#           --pheno "${ukbb_dir}/phenotypedata/master_phe/master.phe" --pheno-name $phe \
-#           --pheno "${ukbb_dir}/phenotypedata/extras/cancer/current/phe/${phe}.phe" \
 
 # combine summary stats
 phe2="PHENO1"
